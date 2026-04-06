@@ -3,5 +3,4 @@ pandas
 scikit-learn
 plotly
 textblob
-wordcloud
-matplotlib
+pillow
