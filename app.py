@@ -6,14 +6,13 @@ import time
 # Page Config
 st.set_page_config(page_title="FakeShield AI", layout="wide")
 
-# Load Models
+# --- LOAD MODELS ---
 @st.cache_resource
 def load_models():
-    model = pickle.load(open('facttrace.pkl', 'rb'))
+    # CHANGE THESE NAMES to match exactly what you see in your GitHub folder
+    model = pickle.load(open('facttrace_model.pkl', 'rb')) 
     tfidf = pickle.load(open('tfidf_vectorizer.pkl', 'rb'))
     return model, tfidf
-
-model, tfidf = load_models()
 
 # Professional CSS for the "FakeShield" Look
 st.markdown("""
