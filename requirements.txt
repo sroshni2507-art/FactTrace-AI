@@ -1,7 +1,7 @@
 streamlit
 pandas
 scikit-learn
+plotly
 textblob
 wordcloud
 matplotlib
-twilio
