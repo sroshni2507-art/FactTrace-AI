@@ -2,8 +2,11 @@ import streamlit as st
 import pickle
 import plotly.graph_objects as go
 import time
+import pandas as pd  # <--- ADD THIS LINE HERE
 from textblob import TextBlob
 from PIL import Image
+
+# ... rest of the code ...
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="FactTrace AI | Truth-Bomb Mitigation", layout="wide", page_icon="🛡️")
