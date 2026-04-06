@@ -91,6 +91,125 @@ def load_assets():
         return None, None
 
 model, tfidf = load_assets()
+st.markdown("""
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+    /* 1. Global Background & Smoothing */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+    
+    .stApp {
+        background: radial-gradient(circle at top right, #0a192f, #05070a);
+        color: #e0e0e0;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* 2. Glassmorphism Card Effect */
+    .glass-card {
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 20px;
+        border: 1px solid rgba(0, 242, 254, 0.1);
+        padding: 30px;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5);
+        margin-bottom: 25px;
+        transition: 0.4s;
+    }
+    .glass-card:hover {
+        border: 1px solid rgba(0, 242, 254, 0.3);
+        transform: translateY(-5px);
+    }
+
+    /* 3. Text Area Terminal Style */
+    .stTextArea textarea {
+        background-color: rgba(10, 15, 30, 0.8) !important;
+        color: #00f2fe !important;
+        border: 1px solid #1e2a5a !important;
+        border-radius: 15px !important;
+        font-family: 'Courier New', monospace;
+        font-size: 1.1rem !important;
+    }
+
+    /* 4. Neon Buttons */
+    .stButton>button {
+        background: linear-gradient(90deg, #00f2fe 0%, #0072ff 100%);
+        color: #000 !important;
+        font-weight: 800 !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 12px 24px !important;
+        transition: 0.3s all ease;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        width: 100%;
+        box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
+    }
+    .stButton>button:hover {
+        box-shadow: 0 0 25px rgba(0, 242, 254, 0.6);
+        transform: scale(1.02);
+    }
+
+    /* 5. Styled Tabs (Neon Underline) */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+        background-color: transparent;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 10px 10px 0 0;
+        padding: 10px 20px;
+        color: #8a96c3;
+        font-weight: 600;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: rgba(0, 242, 254, 0.1) !important;
+        color: #00f2fe !important;
+        border-bottom: 3px solid #00f2fe !important;
+    }
+
+    /* 6. Result Alerts */
+    .result-box-real {
+        border-left: 10px solid #00ff88;
+        background: rgba(0, 255, 136, 0.1);
+        padding: 25px;
+        border-radius: 15px;
+        animation: fadeIn 0.5s;
+    }
+    .result-box-fake {
+        border-left: 10px solid #ff4b4b;
+        background: rgba(255, 75, 75, 0.1);
+        padding: 25px;
+        border-radius: 15px;
+        animation: fadeIn 0.5s;
+    }
+
+    /* 7. Metric Styling */
+    [data-testid="stMetric"] {
+        background: rgba(255, 255, 255, 0.03);
+        padding: 15px;
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* 8. Title Animation */
+    .main-title {
+        font-size: 3.5rem;
+        font-weight: 900;
+        background: linear-gradient(to right, #00f2fe, #0072ff, #00f2fe);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: shine 3s linear infinite;
+    }
+
+    @keyframes shine {
+        to { background-position: 200% center; }
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 # --- 4. SIDEBAR DASHBOARD ---
 with st.sidebar:
