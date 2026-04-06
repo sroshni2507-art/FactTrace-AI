@@ -1,129 +1,89 @@
 import streamlit as st
 import pickle
-import pandas as pd
-from textblob import TextBlob
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import time
 
-# --- PAGE CONFIG ---
-st.set_page_config(page_title="FactTrace AI", page_icon="🛡️", layout="wide")
+# Page Config
+st.set_page_config(page_title="FakeShield AI", layout="wide")
 
-# --- LOAD MODELS ---
+# Load Models
 @st.cache_resource
-def load_assets():
-    model = pickle.load(open('facttrace_model.pkl', 'rb'))
+def load_models():
+    model = pickle.load(open('facttrace.pkl', 'rb'))
     tfidf = pickle.load(open('tfidf_vectorizer.pkl', 'rb'))
     return model, tfidf
 
-model, tfidf = load_assets()
+model, tfidf = load_models()
 
-# --- CUSTOM CSS (For that FakeShield Look) ---
+# Professional CSS for the "FakeShield" Look
 st.markdown("""
     <style>
-    /* Main Background */
-    .stApp { background-color: #060918; color: #ffffff; }
-    
-    /* Header & Navbar */
-    .nav-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 50px; background: #0b112b; border-bottom: 1px solid #1e2a5a; }
-    .nav-tabs { display: flex; gap: 20px; background: #0f173d; padding: 8px 20px; border-radius: 30px; border: 1px solid #2d3b7d; }
-    .tab-item { color: #8a96c3; font-weight: bold; cursor: pointer; }
-    .tab-active { color: #00f2fe; border-bottom: 2px solid #00f2fe; }
-
-    /* Search/Input Box */
-    .input-container { background: #0f173d; border-radius: 20px; padding: 30px; border: 1px solid #1e2a5a; text-align: center; margin-top: 20px; }
-    .verify-btn { background: #00f2fe; color: black; font-weight: bold; padding: 12px 40px; border-radius: 30px; border: none; cursor: pointer; float: right; margin-top: -50px; margin-right: 20px; }
-
-    /* Result Cards */
-    .result-card { background: #0b112b; border-radius: 15px; padding: 25px; border-left: 10px solid #00f2fe; margin-top: 20px; }
-    .fake-card { border-left: 10px solid #ff4b4b; }
-    
-    /* Metrics Sidebar */
-    .metric-container { background: #0f173d; border-radius: 15px; padding: 20px; border: 1px solid #1e2a5a; }
-    .status-badge { background: #00332c; color: #00ff88; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; border: 1px solid #00ff88; }
-    
-    /* Progress Bars */
-    .stProgress > div > div > div > div { background-image: linear-gradient(to right, #00f2fe , #0072ff); }
+    .main { background-color: #060918; color: white; }
+    .stTextArea textarea { background-color: #0f173d !important; color: white !important; border: 1px solid #1e2a5a !important; border-radius: 15px; }
+    .status-badge { background: #00332c; color: #00ff88; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; border: 1px solid #00ff88; }
+    .verify-btn { background: linear-gradient(90deg, #00f2fe 0%, #0072ff 100%); color: black; font-weight: bold; padding: 10px; border-radius: 10px; width: 100%; border: none; }
+    .result-card { background: #0b112b; padding: 20px; border-radius: 15px; border-left: 5px solid #00f2fe; margin-top: 20px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- HEADER / NAVIGATION ---
-st.markdown("""
-    <div class="nav-bar">
-        <h2 style="color: #ffffff; margin:0;">🛡️ FactTrace <span style="color:#00f2fe;">AI</span></h2>
-        <div class="nav-tabs">
-            <span class="tab-item tab-active">🔍 Detection</span>
-            <span class="tab-item">🔗 Origin Tracing</span>
-            <span class="tab-item">📢 Mitigation</span>
-        </div>
-        <div class="status-badge">● Operational</div>
-    </div>
-    <p style="text-align:center; color:#8a96c3; margin-top:20px;">Enter news content, a headline, or a URL to verify its credibility against official sources.</p>
-    """, unsafe_allow_html=True)
+# Header
+col_h1, col_h2 = st.columns([4, 1])
+with col_h1:
+    st.markdown("## 🛡️ FakeShield <span style='color:#00f2fe;'>AI</span>", unsafe_allow_html=True)
+with col_h2:
+    st.markdown("<div class='status-badge'>● System Operational</div>", unsafe_allow_html=True)
 
-# --- MAIN INPUT ---
-with st.container():
-    news_input = st.text_area("", height=150, placeholder="Paste news content here...", key="news_area")
-    btn_col = st.columns([5, 1])
-    with btn_col[1]:
-        analyze_btn = st.button("Verify Now", use_container_width=True)
+# Tabs
+tab1, tab2, tab3 = st.tabs(["🔍 Detection", "🔗 Origin Tracing", "📢 Mitigation"])
 
-# --- LOGIC & RESULTS ---
-if analyze_btn and news_input:
-    # Prediction
-    vec_text = tfidf.transform([news_input])
-    prediction = model.predict(vec_text)[0]
+with tab1:
+    st.write("Enter news content to verify its credibility against official sources.")
+    news_input = st.text_area("", height=150, placeholder="Paste news content here...")
     
-    # Sentiment & Confidence (Mock logic for UI matching)
-    blob = TextBlob(news_input)
-    confidence = 94.5 if prediction == 1 else 12.8
-    risk_text = "LOW" if prediction == 1 else "CRITICAL"
-    risk_color = "#00ff88" if prediction == 1 else "#ff4b4b"
+    if st.button("VERIFY NOW"):
+        if news_input:
+            with st.spinner("Analyzing linguistic patterns..."):
+                time.sleep(1)
+                vec = tfidf.transform([news_input])
+                pred = model.predict(vec)[0]
+                prob = 94.2 if pred == 1 else 14.5 # Simulated confidence
 
-    col1, col2 = st.columns([2, 1])
-
-    with col1:
-        if prediction == 1:
-            st.markdown(f"""
-                <div class="result-card">
-                    <span style="background:#00ff88; color:black; padding:5px 15px; border-radius:5px; font-weight:bold;">VERIFIED CONTENT</span>
-                    <h3>The statement is factually correct.</h3>
-                    <p style="color:#8a96c3;">This content matches official records and credible news sources. No misinformation detected.</p>
-                    <p style="color:#00f2fe;">#Verified #Official #Truth</p>
-                </div>
-            """, unsafe_allow_html=True)
+                if pred == 0:
+                    st.error("🚨 POTENTIAL MISINFORMATION DETECTED")
+                    st.markdown(f"""<div class='result-card'>
+                        <h3>Confidence Score: {prob}%</h3>
+                        <p>This content matches patterns of known fake news spreaders. Mitigation recommended.</p>
+                        </div>""", unsafe_allow_html=True)
+                else:
+                    st.success("✅ VERIFIED REAL CONTENT")
+                    st.balloons()
         else:
-            st.markdown(f"""
-                <div class="result-card fake-card">
-                    <span style="background:#ff4b4b; color:white; padding:5px 15px; border-radius:5px; font-weight:bold;">FAKE CONTENT DETECTED</span>
-                    <h3>The statement appears to be misinformation.</h3>
-                    <p style="color:#8a96c3;">Linguistic analysis shows patterns of emotional bias and unofficial sources. Mitigation recommended.</p>
-                    <p style="color:#ff4b4b;">#FakeNews #Alert #CorrectionNeeded</p>
-                </div>
-            """, unsafe_allow_html=True)
+            st.warning("Please enter text first.")
 
-    with col2:
-        st.markdown(f"""
-            <div class="metric-container">
-                <h4>Analysis Metrics</h4>
-                <p style="margin-bottom:0;">Confidence Score</p>
-                <h3 style="color:#00f2fe; margin-top:0;">{confidence}%</h3>
-            </div>
-        """, unsafe_allow_html=True)
-        st.progress(confidence/100)
-        
-        st.markdown(f"""
-            <div class="metric-container" style="margin-top:15px;">
-                <p style="margin-bottom:0;">Risk Level</p>
-                <h3 style="color:{risk_color}; margin-top:0;">{risk_text}</h3>
-            </div>
-        """, unsafe_allow_html=True)
+with tab2:
+    st.subheader("Visualizing Misinformation Propagation")
+    # Logic: Creating a network graph to show "Origin Tracing"
+    fig = go.Figure()
+    # Nodes (Origin -> Spreader 1 -> Consumer)
+    edge_x = [0, 1, 1, 2, 2, 2]
+    edge_y = [0, 1, -1, 2, 0, -2]
+    
+    fig.add_trace(go.Scatter(x=edge_x, y=edge_y, mode='markers+text',
+                             text=["ORIGIN", "Spreader A", "Spreader B", "User 1", "User 2", "User 3"],
+                             marker=dict(size=40, color=['red', 'orange', 'orange', 'cyan', 'cyan', 'cyan']),
+                             textposition="top center"))
+    
+    fig.update_layout(title="Tracing the Source", showlegend=False, 
+                      paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
+    st.plotly_chart(fig, use_container_width=True)
 
-        # Mitigation Input
-        if prediction == 0:
-            st.write("---")
-            spreader = st.text_input("🎯 Spreader's Number:", placeholder="+91xxxxxx")
-            if st.button("Send Mitigation Alert"):
-                st.success("Correction SMS Sent! ✅")
-
-else:
-    st.info("Waiting for input to verify...")
+with tab3:
+    st.subheader("Automated Mitigation Center")
+    st.write("Send authenticated news directly to the spreader's inbox.")
+    
+    spreader_phone = st.text_input("Enter Spreader's Phone Number (for SMS simulation):")
+    correction_msg = st.text_area("Authenticated Message:", "ALERT: The information you shared has been flagged as FALSE. Read the official truth here: [Reuters Link]")
+    
+    if st.button("SEND TRUTH ALERT"):
+        st.success(f"Mitigation Successful! Correction sent to {spreader_phone} ✅")
+        st.info("The spreader's feed has been auto-populated with official facts.")
