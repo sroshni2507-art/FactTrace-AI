@@ -10,6 +10,12 @@ from PIL import Image
 st.set_page_config(page_title="FactTrace AI | Truth-Bomb Mitigation", layout="wide", page_icon="🛡️")
 
 # --- LOAD ML MODELS ---
+
+tfidf_vectorizer = TfidfVectorizer(stop_words='english', max_df=0.7, max_features=5000) 
+
+
+# pickle.dump(model, open('facttrace_model.pkl', 'wb'))
+# pickle.dump(tfidf_vectorizer, open('tfidf_vectorizer.pkl', 'wb'))
 @st.cache_resource
 def load_assets():
     try:
