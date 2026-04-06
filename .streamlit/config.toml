@@ -1,0 +1,21 @@
+[theme]
+# Primary accent color (Buttons and highlights)
+primaryColor = "#00f2fe"
+
+# Background color of the main content area
+backgroundColor = "#0e1117"
+
+# Background color of the sidebar
+secondaryBackgroundColor = "#1f2937"
+
+# Text color
+textColor = "#fafafa"
+
+# Font family
+font = "sans serif"
+
+[server]
+# General server settings (helps in smooth deployment)
+headless = true
+enableCORS = false
+enableXsrfProtection = false
