@@ -342,15 +342,27 @@ def categorize_news(text: str) -> dict:
     return scores
 
 def load_model():
-    """Attempt to load pickled model; fall back to keyword-based if unavailable."""
-    try:
-        with open("model.pkl", "rb") as f:
-            model = pickle.load(f)
-        with open("vectorizer.pkl", "rb") as f:
-            vectorizer = pickle.load(f)
-        return model, vectorizer
-    except Exception:
-        return None, None
+    """
+    Load model + vectorizer.
+    Tries multiple filename pairs so the app works whether you use:
+      • facttrace_model.pkl  +  tfidf_vectorizer.pkl   (GitHub repo filenames)
+      • model.pkl            +  vectorizer.pkl          (generated filenames)
+    Falls back to keyword-based detection if no file is found.
+    """
+    filename_pairs = [
+        ("facttrace_model.pkl",  "tfidf_vectorizer.pkl"),   # GitHub repo names
+        ("model.pkl",            "vectorizer.pkl"),          # generated names
+    ]
+    for model_file, vec_file in filename_pairs:
+        try:
+            with open(model_file, "rb") as f:
+                model = pickle.load(f)
+            with open(vec_file, "rb") as f:
+                vectorizer = pickle.load(f)
+            return model, vectorizer
+        except Exception:
+            continue
+    return None, None
 
 def predict_news(text: str, model, vectorizer) -> str:
     """Returns 'REAL' or 'FAKE'."""
@@ -366,6 +378,12 @@ def predict_news(text: str, model, vectorizer) -> str:
     text_lower = text.lower()
     hits = sum(1 for k in fake_kw if k in text_lower)
     return "FAKE" if hits >= 2 else "REAL"
+
+# ─────────────────────────────────────────────
+# LOAD MODEL  (before sidebar so status shows)
+# ─────────────────────────────────────────────
+model, vectorizer = load_model()
+_model_loaded = model is not None
 
 # ─────────────────────────────────────────────
 # SIDEBAR
@@ -394,7 +412,9 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown('<div class="sec-head">SYSTEM STATUS</div>', unsafe_allow_html=True)
-    for name, status, color in [("ML Engine","Active","dot-green"),("NLP Pipeline","Running","dot-green"),
+    ml_status = "Active ✓" if _model_loaded else "Keyword Mode"
+    ml_dot    = "dot-green" if _model_loaded else "dot-orange"
+    for name, status, color in [(f"ML Engine", ml_status, ml_dot),("NLP Pipeline","Running","dot-green"),
                                   ("Database","Connected","dot-green"),("API Gateway","1000/hr","dot-green")]:
         st.markdown(f'<span class="{color}"></span><span style="font-size:0.8rem;color:#aac8dd">{name}</span>'
                     f'<span style="float:right;font-size:0.75rem;color:rgba(0,245,255,0.5)">{status}</span><br>', unsafe_allow_html=True)
@@ -419,8 +439,6 @@ st.markdown('<div style="text-align:center;margin:6px 0 20px"><span class="badge
 # TABS
 # ─────────────────────────────────────────────
 tabs = st.tabs(["🔍 Detection", "📊 Analytics", "🔗 Origin Trace", "🚀 Truth-Bomb", "📱 Platforms", "🗂️ History", "🔧 Developer API"])
-
-model, vectorizer = load_model()
 
 # ════════════════════════════════════════════
 # TAB 1 – ADVANCED DETECTION
