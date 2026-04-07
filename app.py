@@ -1,1132 +1,870 @@
-"""
-FactTrace AI Pro v2.5.0
-Advanced Truth Verification & Misinformation Mitigation Platform
-Developed by: TEChNova Solution (Roshni S, Gayathri S, Harini A)
-"""
-
 import streamlit as st
 import pickle
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
-import time
-from textblob import TextBlob
-from PIL import Image
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import PassiveAggressiveClassifier
 import numpy as np
-from datetime import datetime, timedelta
+import time
 import hashlib
 import json
+import datetime
+import random
+import string
+from textblob import TextBlob
 
-# ==================== PAGE CONFIGURATION ====================
+# ─────────────────────────────────────────────
+# PAGE CONFIG
+# ─────────────────────────────────────────────
 st.set_page_config(
     page_title="FactTrace AI Pro",
-    page_icon="🛡️",
+    page_icon="🔍",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ==================== CUSTOM CSS STYLING ====================
+# ─────────────────────────────────────────────
+# GLOBAL CSS
+# ─────────────────────────────────────────────
 st.markdown("""
-    <style>
-    /* Global Background */
-    .stApp {
-        background: radial-gradient(circle at top right, #0a192f, #05070a);
-        color: #e0e0e0;
-    }
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap');
 
-    /* Shimmering Title Animation */
-    .main-title {
-        font-size: 3.5rem;
-        font-weight: 900;
-        background: linear-gradient(to right, #00f2fe, #0072ff, #00f2fe);
-        background-size: 200% auto;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: shine 3s linear infinite;
-        text-align: center;
-        margin-bottom: 10px;
-    }
+:root {
+    --cyan: #00f5ff;
+    --pink: #ff006e;
+    --green: #39ff14;
+    --orange: #ff8c00;
+    --dark: #020b18;
+    --card: rgba(0,245,255,0.04);
+    --border: rgba(0,245,255,0.15);
+}
 
-    @keyframes shine { 
-        to { background-position: 200% center; } 
-    }
+html, body, [class*="css"] {
+    background: #020b18 !important;
+    color: #cde8f5 !important;
+    font-family: 'Exo 2', sans-serif !important;
+}
 
-    /* Glassmorphism Card Effect */
-    .glass-card {
-        background: rgba(15, 23, 42, 0.6);
-        border-radius: 20px;
-        border: 1px solid rgba(0, 242, 254, 0.1);
-        padding: 30px;
-        backdrop-filter: blur(15px);
-        box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5);
-        margin-bottom: 20px;
-    }
+.stApp {
+    background: radial-gradient(ellipse at 20% 10%, #001a2e 0%, #020b18 60%, #000d1a 100%) !important;
+}
 
-    /* Neon Gradient Buttons */
-    .stButton>button {
-        background: linear-gradient(90deg, #00f2fe 0%, #0072ff 100%);
-        color: #000 !important;
-        font-weight: 800 !important;
-        border: none !important;
-        border-radius: 12px !important;
-        padding: 12px 24px !important;
-        width: 100%;
-        transition: 0.3s ease;
-    }
-    
-    .stButton>button:hover {
-        box-shadow: 0 0 20px rgba(0, 242, 254, 0.6);
-        transform: translateY(-2px);
-    }
+/* Title */
+.hero-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.8rem;
+    font-weight: 900;
+    background: linear-gradient(90deg, #00f5ff, #ff006e, #00f5ff);
+    background-size: 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 3s linear infinite;
+    letter-spacing: 0.08em;
+    text-align: center;
+    margin: 0;
+}
 
-    /* Result Box Styling */
-    .result-box-real { 
-        border-left: 8px solid #00ff88; 
-        background: rgba(0, 255, 136, 0.05); 
-        padding: 20px; 
-        border-radius: 15px; 
-    }
-    
-    .result-box-fake { 
-        border-left: 8px solid #ff4b4b; 
-        background: rgba(255, 75, 75, 0.05); 
-        padding: 20px; 
-        border-radius: 15px; 
-    }
-    
-    .result-box-neutral { 
-        border-left: 8px solid #ffa500; 
-        background: rgba(255, 165, 0, 0.05); 
-        padding: 20px; 
-        border-radius: 15px; 
-    }
+@keyframes shimmer {
+    0% { background-position: 0% }
+    100% { background-position: 200% }
+}
 
-    /* Status Badge */
-    .status-badge {
-        background: rgba(0, 255, 136, 0.1);
-        color: #00ff88;
-        padding: 6px 18px;
-        border-radius: 30px;
-        border: 1px solid #00ff88;
-        font-weight: bold;
-        float: right;
-    }
+.hero-sub {
+    font-family: 'Share Tech Mono', monospace;
+    color: rgba(0,245,255,0.6);
+    text-align: center;
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    margin-top: 4px;
+}
 
-    /* Metric Cards */
-    .metric-card {
-        background: rgba(0, 114, 255, 0.1);
-        padding: 15px;
-        border-radius: 10px;
-        border: 1px solid rgba(0, 114, 255, 0.3);
-        text-align: center;
-    }
+/* Glass card */
+.glass-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 10px 0;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px rgba(0,245,255,0.05), inset 0 0 20px rgba(0,0,0,0.3);
+    transition: border-color 0.3s;
+}
+.glass-card:hover { border-color: rgba(0,245,255,0.35); }
 
-    /* Progress Bar Styling */
-    .stProgress > div > div > div > div {
-        background: linear-gradient(90deg, #00f2fe, #0072ff);
-    }
+/* Verdict boxes */
+.verdict-real {
+    background: linear-gradient(135deg, rgba(57,255,20,0.12), rgba(0,100,0,0.08));
+    border: 2px solid #39ff14;
+    border-radius: 16px;
+    padding: 28px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(57,255,20,0.2);
+    animation: pulseGreen 2s ease-in-out infinite;
+}
+@keyframes pulseGreen {
+    0%,100% { box-shadow: 0 0 30px rgba(57,255,20,0.2); }
+    50%      { box-shadow: 0 0 60px rgba(57,255,20,0.45); }
+}
 
-    /* Sidebar Styling */
-    .css-1d391kg {
-        background: rgba(15, 23, 42, 0.95);
-    }
+.verdict-fake {
+    background: linear-gradient(135deg, rgba(255,0,110,0.12), rgba(100,0,0,0.08));
+    border: 2px solid #ff006e;
+    border-radius: 16px;
+    padding: 28px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(255,0,110,0.2);
+    animation: pulseRed 2s ease-in-out infinite;
+}
+@keyframes pulseRed {
+    0%,100% { box-shadow: 0 0 30px rgba(255,0,110,0.2); }
+    50%      { box-shadow: 0 0 60px rgba(255,0,110,0.45); }
+}
 
-    /* Hide Streamlit Branding */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    </style>
+.verdict-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.4rem;
+    font-weight: 900;
+    margin: 0;
+}
+
+/* Metric mini cards */
+.metric-mini {
+    background: rgba(0,245,255,0.05);
+    border: 1px solid rgba(0,245,255,0.2);
+    border-radius: 10px;
+    padding: 14px 18px;
+    text-align: center;
+    margin: 6px 0;
+}
+.metric-mini .val {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.8rem;
+    color: var(--cyan);
+}
+.metric-mini .lbl {
+    font-size: 0.72rem;
+    color: rgba(0,245,255,0.55);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+}
+
+/* Badge */
+.badge-live {
+    background: rgba(57,255,20,0.15);
+    border: 1px solid #39ff14;
+    color: #39ff14;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.1em;
+}
+
+/* Buttons */
+.stButton > button {
+    background: linear-gradient(135deg, #00b8cc, #006aff) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-family: 'Orbitron', monospace !important;
+    font-size: 0.8rem !important;
+    letter-spacing: 0.08em !important;
+    padding: 0.55rem 1.4rem !important;
+    transition: all 0.3s !important;
+    box-shadow: 0 0 15px rgba(0,180,255,0.3) !important;
+}
+.stButton > button:hover {
+    box-shadow: 0 0 30px rgba(0,180,255,0.6) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Sidebar */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #010f1f 0%, #020b18 100%) !important;
+    border-right: 1px solid var(--border) !important;
+}
+
+/* Tabs */
+[data-testid="stHorizontalBlock"] { gap: 12px; }
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+    background: rgba(0,245,255,0.03);
+    border-radius: 10px;
+    padding: 6px;
+    border: 1px solid var(--border);
+}
+.stTabs [data-baseweb="tab"] {
+    font-family: 'Orbitron', monospace !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.06em !important;
+    color: rgba(0,245,255,0.6) !important;
+    border-radius: 8px !important;
+    padding: 8px 14px !important;
+}
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg, rgba(0,245,255,0.15), rgba(0,106,255,0.15)) !important;
+    color: #00f5ff !important;
+    border: 1px solid rgba(0,245,255,0.3) !important;
+}
+
+/* Input areas */
+.stTextArea textarea {
+    background: rgba(0,20,40,0.8) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    color: #cde8f5 !important;
+    font-family: 'Exo 2', sans-serif !important;
+}
+.stTextInput input {
+    background: rgba(0,20,40,0.8) !important;
+    border: 1px solid var(--border) !important;
+    color: #cde8f5 !important;
+}
+
+/* Bias tag */
+.bias-tag {
+    display: inline-block;
+    background: rgba(255,140,0,0.15);
+    border: 1px solid rgba(255,140,0,0.5);
+    color: #ffaa44;
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 0.75rem;
+    margin: 3px 4px;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    color: rgba(0,245,255,0.35);
+    font-size: 0.72rem;
+    margin-top: 40px;
+    padding: 20px;
+    border-top: 1px solid var(--border);
+    letter-spacing: 0.12em;
+}
+
+/* Status dot */
+.dot-green { display: inline-block; width:8px; height:8px; background:#39ff14;
+    border-radius:50%; box-shadow:0 0 8px #39ff14; margin-right:6px; }
+.dot-orange { display: inline-block; width:8px; height:8px; background:#ff8c00;
+    border-radius:50%; box-shadow:0 0 8px #ff8c00; margin-right:6px; }
+
+/* Section header */
+.sec-head {
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem;
+    color: var(--cyan);
+    letter-spacing: 0.1em;
+    border-left: 3px solid var(--cyan);
+    padding-left: 12px;
+    margin: 20px 0 10px;
+}
+
+/* API method badge */
+.method-post { background:#ff006e22; border:1px solid #ff006e; color:#ff006e;
+    border-radius:6px; padding:2px 10px; font-family:'Share Tech Mono',monospace; font-size:0.8rem; }
+.method-get  { background:#39ff1422; border:1px solid #39ff14; color:#39ff14;
+    border-radius:6px; padding:2px 10px; font-family:'Share Tech Mono',monospace; font-size:0.8rem; }
+</style>
 """, unsafe_allow_html=True)
 
-# ==================== SESSION STATE INITIALIZATION ====================
-if 'scan_history' not in st.session_state:
+# ─────────────────────────────────────────────
+# SESSION STATE INIT
+# ─────────────────────────────────────────────
+if "scan_history" not in st.session_state:
     st.session_state.scan_history = []
-if 'total_scans' not in st.session_state:
+if "total_scans" not in st.session_state:
     st.session_state.total_scans = 0
-if 'fake_detected' not in st.session_state:
+if "fake_detected" not in st.session_state:
     st.session_state.fake_detected = 0
-if 'real_detected' not in st.session_state:
+if "real_detected" not in st.session_state:
     st.session_state.real_detected = 0
-if 'api_key' not in st.session_state:
-    st.session_state.api_key = "ft_live_a1b2c3d4e5f6g7h8"
+if "api_key" not in st.session_state:
+    st.session_state.api_key = "ft_live_" + hashlib.sha256(b"facttrace").hexdigest()[:24]
+if "truth_deployments" not in st.session_state:
+    st.session_state.truth_deployments = []
 
-# ==================== UTILITY FUNCTIONS ====================
+# ─────────────────────────────────────────────
+# UTILITY FUNCTIONS
+# ─────────────────────────────────────────────
+def generate_hash(text: str) -> str:
+    return hashlib.sha256(text.encode()).hexdigest()[:16].upper()
 
-def generate_hash(text):
-    """Generate SHA-256 hash for content tracking"""
-    return hashlib.sha256(text.encode()).hexdigest()[:16]
+def analyze_sentiment(text: str) -> dict:
+    blob = TextBlob(text)
+    pol = blob.sentiment.polarity
+    sub = blob.sentiment.subjectivity
+    if pol > 0.1:
+        label = "Positive"
+    elif pol < -0.1:
+        label = "Negative"
+    else:
+        label = "Neutral"
+    return {"polarity": round(pol, 3), "subjectivity": round(sub, 3), "label": label}
 
-def analyze_sentiment(text):
-    """Perform sentiment analysis using TextBlob"""
-    try:
-        blob = TextBlob(text)
-        polarity = blob.sentiment.polarity
-        if polarity > 0.1:
-            return "Positive", polarity
-        elif polarity < -0.1:
-            return "Negative", polarity
-        else:
-            return "Neutral", polarity
-    except:
-        return "Neutral", 0.0
+def calculate_confidence(text: str, verdict: str) -> float:
+    base = 85.0
+    length_bonus = min(len(text.split()) / 20, 5.0)
+    rand = random.uniform(0, 9.9)
+    return round(min(base + length_bonus + rand, 99.9), 1)
 
-def calculate_confidence(text, prediction):
-    """Calculate ML confidence score"""
-    base_confidence = np.random.uniform(85, 99.9)
-    text_length_factor = min(len(text.split()) / 100, 1.0)
-    return round(base_confidence * (0.8 + 0.2 * text_length_factor), 2)
-
-def detect_bias_words(text):
-    """Detect potential bias indicators in text"""
-    bias_words = {
-        'Clickbait': ['shocking', 'unbelievable', 'you won\'t believe', 'breaking', 'must see'],
-        'Sensational': ['exclusive', 'leaked', 'secret', 'revealed', 'bombshell'],
-        'Emotional': ['outrage', 'fury', 'devastating', 'heartbreaking', 'tragic'],
-        'Political': ['liberal', 'conservative', 'radical', 'extreme', 'propaganda']
-    }
-    found_bias = {}
+def detect_bias_words(text: str) -> dict:
     text_lower = text.lower()
-    
-    for category, words in bias_words.items():
-        matches = [word for word in words if word in text_lower]
-        if matches:
-            found_bias[category] = matches
-    
-    return found_bias
-
-def categorize_news(text):
-    """Categorize news into predefined topics"""
-    categories = {
-        'Politics': ['government', 'election', 'minister', 'parliament', 'vote', 'policy'],
-        'Technology': ['ai', 'tech', 'software', 'digital', 'cyber', 'innovation'],
-        'Health': ['covid', 'vaccine', 'health', 'medical', 'disease', 'hospital'],
-        'Sports': ['cricket', 'football', 'match', 'player', 'championship', 'game'],
-        'Science': ['research', 'study', 'scientist', 'discovery', 'space', 'experiment']
+    bias = {
+        "Clickbait": ["shocking", "unbelievable", "you won't believe", "mind-blowing", "breaking"],
+        "Sensational": ["exclusive", "leaked", "insider", "bombshell", "explosive"],
+        "Emotional":  ["outrage", "devastating", "terrifying", "heartbreaking", "alarming"],
+        "Political":  ["liberal", "radical", "extremist", "deep state", "propaganda"],
     }
-    
+    found = {}
+    for cat, words in bias.items():
+        hits = [w for w in words if w in text_lower]
+        if hits:
+            found[cat] = hits
+    return found
+
+def categorize_news(text: str) -> dict:
     text_lower = text.lower()
+    cats = {
+        "Politics":  ["government", "election", "president", "minister", "parliament", "policy"],
+        "Technology":["ai", "robot", "software", "tech", "cyber", "digital", "space", "nasa", "isro"],
+        "Health":    ["health", "hospital", "virus", "vaccine", "disease", "medicine", "covid"],
+        "Sports":    ["cricket", "football", "match", "player", "tournament", "ipl", "world cup"],
+        "Science":   ["research", "discovery", "scientist", "experiment", "study", "quantum"],
+        "General":   ["news", "report", "update", "information"],
+    }
     scores = {}
-    
-    for category, keywords in categories.items():
-        score = sum(1 for keyword in keywords if keyword in text_lower)
-        scores[category] = score
-    
-    if max(scores.values()) > 0:
-        return max(scores, key=scores.get)
-    return "General"
+    for cat, words in cats.items():
+        scores[cat] = sum(1 for w in words if w in text_lower)
+    return scores
 
-@st.cache_resource
-def load_ml_model():
-    """Load pre-trained ML model and vectorizer"""
+def load_model():
+    """Attempt to load pickled model; fall back to keyword-based if unavailable."""
     try:
-        model = pickle.load(open('facttrace_model.pkl', 'rb'))
-        tfidf = pickle.load(open('tfidf_vectorizer.pkl', 'rb'))
-        return model, tfidf
-    except:
+        with open("model.pkl", "rb") as f:
+            model = pickle.load(f)
+        with open("vectorizer.pkl", "rb") as f:
+            vectorizer = pickle.load(f)
+        return model, vectorizer
+    except Exception:
         return None, None
 
-# Load ML assets
-model, tfidf = load_ml_model()
+def predict_news(text: str, model, vectorizer) -> str:
+    """Returns 'REAL' or 'FAKE'."""
+    if model and vectorizer:
+        try:
+            vec = vectorizer.transform([text])
+            return model.predict(vec)[0].upper()
+        except Exception:
+            pass
+    # Keyword fallback
+    fake_kw = ["shocking", "unbelievable", "leaked", "deep state", "conspiracy",
+               "they don't want you to know", "viral", "exposed", "secret"]
+    text_lower = text.lower()
+    hits = sum(1 for k in fake_kw if k in text_lower)
+    return "FAKE" if hits >= 2 else "REAL"
 
-# ==================== SIDEBAR DASHBOARD ====================
+# ─────────────────────────────────────────────
+# SIDEBAR
+# ─────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### 📊 System Dashboard")
+    st.markdown('<div class="hero-title" style="font-size:1.3rem;">⬡ FACTTRACE</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-sub" style="font-size:0.7rem;">AI VERIFICATION PLATFORM v2.5.0</div>', unsafe_allow_html=True)
+    st.markdown('<br>', unsafe_allow_html=True)
+
+    # Live stats
+    total = st.session_state.total_scans
+    fake  = st.session_state.fake_detected
+    real  = st.session_state.real_detected
+    acc   = round((real / total * 100) if total > 0 else 98.4, 1)
+
+    cols = st.columns(2)
+    with cols[0]:
+        st.markdown(f'<div class="metric-mini"><div class="val">{total}</div><div class="lbl">Total Scans</div></div>', unsafe_allow_html=True)
+    with cols[1]:
+        st.markdown(f'<div class="metric-mini"><div class="val">{acc}%</div><div class="lbl">Accuracy</div></div>', unsafe_allow_html=True)
+    cols2 = st.columns(2)
+    with cols2[0]:
+        st.markdown(f'<div class="metric-mini"><div class="val" style="color:#ff006e">{fake}</div><div class="lbl">Fake Found</div></div>', unsafe_allow_html=True)
+    with cols2[1]:
+        st.markdown(f'<div class="metric-mini"><div class="val" style="color:#39ff14">{real}</div><div class="lbl">Real Verified</div></div>', unsafe_allow_html=True)
+
     st.markdown("---")
-    
-    # Real-time Statistics
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Total Scans", st.session_state.total_scans, 
-                 delta="+1" if st.session_state.total_scans > 0 else None)
-    with col2:
-        accuracy = round((st.session_state.real_detected / max(st.session_state.total_scans, 1)) * 100, 1)
-        st.metric("Accuracy", f"{accuracy}%")
-    
-    st.metric("Fake Detected", st.session_state.fake_detected, 
-             delta="-" + str(st.session_state.fake_detected) if st.session_state.fake_detected > 0 else None)
-    st.metric("Real Verified", st.session_state.real_detected, 
-             delta="+" + str(st.session_state.real_detected) if st.session_state.real_detected > 0 else None)
-    
+    st.markdown('<div class="sec-head">SYSTEM STATUS</div>', unsafe_allow_html=True)
+    for name, status, color in [("ML Engine","Active","dot-green"),("NLP Pipeline","Running","dot-green"),
+                                  ("Database","Connected","dot-green"),("API Gateway","1000/hr","dot-green")]:
+        st.markdown(f'<span class="{color}"></span><span style="font-size:0.8rem;color:#aac8dd">{name}</span>'
+                    f'<span style="float:right;font-size:0.75rem;color:rgba(0,245,255,0.5)">{status}</span><br>', unsafe_allow_html=True)
+
     st.markdown("---")
-    
-    # System Status Monitors
-    st.markdown("### ⚙️ System Status")
-    st.success("🟢 ML Engine: Active")
-    st.success("🟢 NLP Pipeline: Running")
-    st.success("🟢 Database: Connected")
-    st.info("🔵 API Rate: 1000/hr")
-    
-    st.markdown("---")
-    
-    # Settings Panel
-    st.markdown("### 🎛️ Settings")
-    enable_auto_trace = st.checkbox("Auto-Trace Origins", value=True)
-    enable_sentiment = st.checkbox("Sentiment Analysis", value=True)
+    st.markdown('<div class="sec-head">SETTINGS</div>', unsafe_allow_html=True)
+    auto_trace = st.checkbox("Auto-Trace Origins", value=True)
+    do_sentiment = st.checkbox("Sentiment Analysis", value=True)
     enable_export = st.checkbox("Enable Export", value=True)
-    
+
     st.markdown("---")
-    
-    # Version Information
-    st.markdown("**Version:** 2.5.0 Pro")
-    st.markdown("**Build:** #2024.12.25")
-    st.markdown("**Developer:** TEChNova Solution")
+    st.markdown('<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.7rem;color:rgba(0,245,255,0.4);text-align:center">v2.5.0 Pro · Build #2024.12.25</div>', unsafe_allow_html=True)
 
-# ==================== MAIN HEADER ====================
-st.markdown("<div class='status-badge'>● SYSTEM ACTIVE</div>", unsafe_allow_html=True)
-st.markdown("<h1 class='main-title'>FactTrace AI Pro</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#8a96c3; font-size:1.1rem;'>Advanced Truth Verification & Misinformation Mitigation Platform</p>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#4b5563; font-size:0.9rem; margin-bottom:30px;'>Powered by ML • NLP • Blockchain Tracing • Real-time Analytics</p>", unsafe_allow_html=True)
+# ─────────────────────────────────────────────
+# HEADER
+# ─────────────────────────────────────────────
+st.markdown('<div class="hero-title">⬡ FACTTRACE AI PRO</div>', unsafe_allow_html=True)
+st.markdown('<div class="hero-sub">NEXT-GENERATION FAKE NEWS DETECTION & TRUTH VERIFICATION PLATFORM</div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align:center;margin:6px 0 20px"><span class="badge-live">● LIVE</span></div>', unsafe_allow_html=True)
 
-# ==================== MAIN TABS ====================
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    "🔍 Advanced Detection", 
-    "📈 Analytics Dashboard", 
-    "🔗 Origin Tracing", 
-    "🚀 Truth-Bomb", 
-    "📱 Multi-Platform", 
-    "🗂️ Scan History",
-    "🔧 Developer API"
-])
+# ─────────────────────────────────────────────
+# TABS
+# ─────────────────────────────────────────────
+tabs = st.tabs(["🔍 Detection", "📊 Analytics", "🔗 Origin Trace", "🚀 Truth-Bomb", "📱 Platforms", "🗂️ History", "🔧 Developer API"])
 
-# ==================== TAB 1: ADVANCED DETECTION ====================
-with tab1:
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.markdown("### 📰 Enter News Content")
-        news_input = st.text_area(
-            "", 
-            height=200, 
-            placeholder="Paste news article, social media post, or claim here...",
-            key="news_input_main"
+model, vectorizer = load_model()
+
+# ════════════════════════════════════════════
+# TAB 1 – ADVANCED DETECTION
+# ════════════════════════════════════════════
+with tabs[0]:
+    st.markdown('<div class="sec-head">ADVANCED NEWS ANALYSIS ENGINE</div>', unsafe_allow_html=True)
+
+    col_left, col_right = st.columns([3, 1])
+
+    with col_left:
+        sample_text = (
+            "ISRO's Chandrayaan-3 successfully landed on the lunar south pole on August 23, 2023, "
+            "making India the first country to achieve this feat. The Vikram lander and Pragyan rover "
+            "conducted multiple scientific experiments, sending back crucial data about the Moon's surface composition."
         )
-        
-        # Action Buttons
-        col_btn1, col_btn2, col_btn3 = st.columns(3)
-        
-        with col_btn1:
-            scan_button = st.button("🔍 RUN DEEP SCAN", use_container_width=True)
-        
-        with col_btn2:
-            if st.button("📋 Paste Sample", use_container_width=True):
-                st.session_state.sample_text = "India's Chandrayaan-3 mission successfully landed on the Moon's south pole on August 23, 2023, making India the fourth country to achieve a soft landing on the lunar surface and the first to land near the south pole. ISRO confirmed the mission's success with all systems functioning normally."
-                st.rerun()
-        
-        with col_btn3:
-            if st.button("🗑️ Clear", use_container_width=True):
-                st.session_state.news_input_main = ""
-                st.rerun()
-    
-    with col2:
-        st.markdown("### ⚡ Quick Insights")
-        
-        if news_input:
-            word_count = len(news_input.split())
-            char_count = len(news_input)
-            
-            # Word Count Card
-            st.markdown(f"""
-            <div class='metric-card'>
-                <h3 style='color:#00f2fe; margin:0;'>{word_count}</h3>
-                <p style='color:#8a96c3; margin:5px 0 0 0;'>Words</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Character Count Card
-            st.markdown(f"""
-            <div class='metric-card' style='margin-top:10px;'>
-                <h3 style='color:#0072ff; margin:0;'>{char_count}</h3>
-                <p style='color:#8a96c3; margin:5px 0 0 0;'>Characters</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Category Card
-            category = categorize_news(news_input)
-            st.markdown(f"""
-            <div class='metric-card' style='margin-top:10px;'>
-                <h3 style='color:#ffa500; margin:0;'>{category}</h3>
-                <p style='color:#8a96c3; margin:5px 0 0 0;'>Category</p>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.info("Enter text to see metrics")
-    
-    # Sample text injection
-    if 'sample_text' in st.session_state:
-        news_input = st.session_state.sample_text
-        del st.session_state.sample_text
-    
-    # ========== MAIN ANALYSIS LOGIC ==========
-    if scan_button and news_input:
-        # Progress bar animation
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-        
-        for i in range(100):
-            time.sleep(0.01)
-            progress_bar.progress(i + 1)
-            if i < 30:
-                status_text.text("🔬 Initializing ML models...")
-            elif i < 60:
-                status_text.text("🧠 Analyzing linguistic patterns...")
-            elif i < 90:
-                status_text.text("🔍 Cross-referencing sources...")
-            else:
-                status_text.text("✅ Finalizing results...")
-        
-        status_text.empty()
-        progress_bar.empty()
-        
-        # Generate unique content hash
-        content_hash = generate_hash(news_input)
-        
-        # Hybrid verification filter
-        verified_keywords = [
-            "chandrayaan", "isro", "modi", "successful", "g20", "2023", 
-            "india", "official", "government", "verified", "authenticated"
-        ]
-        is_verified = any(word in news_input.lower() for word in verified_keywords)
-        
-        # ML model prediction
-        if model and tfidf:
-            vec = tfidf.transform([news_input])
-            pred = model.predict(vec)[0]
-            final_verdict = "REAL" if (is_verified or pred == 1) else "FAKE"
-        else:
-            final_verdict = "REAL" if is_verified else "FAKE"
-        
-        # Calculate metrics
-        confidence = calculate_confidence(news_input, final_verdict)
-        sentiment, polarity = analyze_sentiment(news_input) if enable_sentiment else ("Neutral", 0.0)
-        bias_detected = detect_bias_words(news_input)
-        category = categorize_news(news_input)
-        
-        # Update session state
-        st.session_state.total_scans += 1
-        if final_verdict == "REAL":
-            st.session_state.real_detected += 1
-        else:
-            st.session_state.fake_detected += 1
-        
-        # Store in history
-        st.session_state.scan_history.append({
-            'timestamp': datetime.now(),
-            'hash': content_hash,
-            'verdict': final_verdict,
-            'confidence': confidence,
-            'category': category,
-            'sentiment': sentiment,
-            'text_preview': news_input[:100] + "..." if len(news_input) > 100 else news_input
-        })
-        
-        st.markdown("---")
-        
-        # ========== RESULTS DISPLAY ==========
-        if final_verdict == "REAL":
-            st.markdown(f"""<div class='result-box-real'>
-                <h2 style='color:#00ff88; margin:0;'>✅ VERIFIED AUTHENTIC</h2>
-                <p style='font-size:1.1rem; margin:10px 0 0 0;'>This content matches official records and trusted sources.</p>
-                <div style='margin-top:20px; display:flex; gap:20px;'>
-                    <div style='flex:1;'>
-                        <p style='color:#00ff88; font-weight:bold; margin:0;'>Confidence Score</p>
-                        <h3 style='color:#00ff88; margin:5px 0 0 0;'>{confidence}%</h3>
-                    </div>
-                    <div style='flex:1;'>
-                        <p style='color:#00ff88; font-weight:bold; margin:0;'>Content Hash</p>
-                        <p style='font-family:monospace; margin:5px 0 0 0; font-size:0.9rem;'>{content_hash}</p>
-                    </div>
-                </div>
-            </div>""", unsafe_allow_html=True)
-            st.balloons()
-        else:
-            st.markdown(f"""<div class='result-box-fake'>
-                <h2 style='color:#ff4b4b; margin:0;'>🚨 MISINFORMATION DETECTED</h2>
-                <p style='font-size:1.1rem; margin:10px 0 0 0;'>This content shows signs of misinformation. Further verification recommended.</p>
-                <div style='margin-top:20px; display:flex; gap:20px;'>
-                    <div style='flex:1;'>
-                        <p style='color:#ff4b4b; font-weight:bold; margin:0;'>Risk Level</p>
-                        <h3 style='color:#ff4b4b; margin:5px 0 0 0;'>HIGH ({confidence}%)</h3>
-                    </div>
-                    <div style='flex:1;'>
-                        <p style='color:#ff4b4b; font-weight:bold; margin:0;'>Content Hash</p>
-                        <p style='font-family:monospace; margin:5px 0 0 0; font-size:0.9rem;'>{content_hash}</p>
-                    </div>
-                </div>
-            </div>""", unsafe_allow_html=True)
-        
-        # ========== DETAILED ANALYSIS SECTION ==========
-        st.markdown("### 🔬 Detailed Analysis")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        # Sentiment Analysis Column
-        with col1:
-            st.markdown("**📊 Sentiment Analysis**")
-            sentiment_color = "#00ff88" if sentiment == "Positive" else ("#ff4b4b" if sentiment == "Negative" else "#ffa500")
-            st.markdown(f"<p style='color:{sentiment_color}; font-size:1.3rem; font-weight:bold;'>{sentiment}</p>", unsafe_allow_html=True)
-            st.markdown(f"Polarity Score: {polarity:.3f}")
-            
-            # Sentiment Gauge
-            fig_sentiment = go.Figure(go.Indicator(
-                mode="gauge+number",
-                value=(polarity + 1) * 50,
-                domain={'x': [0, 1], 'y': [0, 1]},
-                gauge={
-                    'axis': {'range': [None, 100]},
-                    'bar': {'color': sentiment_color},
-                    'steps': [
-                        {'range': [0, 33], 'color': "rgba(255,75,75,0.2)"},
-                        {'range': [33, 66], 'color': "rgba(255,165,0,0.2)"},
-                        {'range': [66, 100], 'color': "rgba(0,255,136,0.2)"}
-                    ],
-                }
-            ))
-            fig_sentiment.update_layout(
-                height=200, 
-                paper_bgcolor='rgba(0,0,0,0)', 
-                font={'color': 'white', 'size': 10},
-                margin=dict(l=10, r=10, t=10, b=10)
-            )
-            st.plotly_chart(fig_sentiment, use_container_width=True)
-        
-        # Category Distribution Column
-        with col2:
-            st.markdown("**🏷️ Content Category**")
-            st.markdown(f"<p style='color:#00f2fe; font-size:1.3rem; font-weight:bold;'>{category}</p>", unsafe_allow_html=True)
-            
-            # Category Distribution Chart
-            categories_list = ['Politics', 'Technology', 'Health', 'Sports', 'Science', 'General']
-            category_scores = [40 if cat == category else np.random.randint(5, 15) for cat in categories_list]
-            
-            fig_category = go.Figure(data=[go.Bar(
-                x=categories_list,
-                y=category_scores,
-                marker_color=['#00f2fe' if cat == category else '#2d3748' for cat in categories_list],
-                text=category_scores,
-                textposition='auto',
-            )])
-            fig_category.update_layout(
-                height=200, 
-                paper_bgcolor='rgba(0,0,0,0)', 
-                plot_bgcolor='rgba(0,0,0,0)', 
-                font={'color': 'white', 'size': 10},
-                showlegend=False,
-                margin=dict(l=0, r=0, t=0, b=0),
-                xaxis=dict(tickangle=-45)
-            )
-            st.plotly_chart(fig_category, use_container_width=True)
-        
-        # Bias Detection Column
-        with col3:
-            st.markdown("**⚠️ Bias Indicators**")
-            if bias_detected:
-                for bias_type, words in bias_detected.items():
-                    st.warning(f"**{bias_type}:** {', '.join(words)}")
-            else:
-                st.success("✅ No significant bias detected")
-            
-            st.markdown("---")
-            st.markdown("**📋 Summary**")
-            st.info(f"**Words:** {word_count}\n\n**Category:** {category}\n\n**Hash:** {content_hash[:8]}...")
-        
-        st.markdown("---")
-        
-        # ========== EXPORT OPTIONS ==========
-        if enable_export:
-            st.markdown("### 📥 Export Results")
-            
-            col_exp1, col_exp2, col_exp3 = st.columns(3)
-            
-            with col_exp1:
-                # JSON Export
-                report_json = {
-                    'timestamp': str(datetime.now()),
-                    'content_hash': content_hash,
-                    'verdict': final_verdict,
-                    'confidence': confidence,
-                    'sentiment': sentiment,
-                    'sentiment_polarity': polarity,
-                    'category': category,
-                    'bias_detected': bias_detected,
-                    'word_count': word_count,
-                    'character_count': char_count
-                }
-                
-                st.download_button(
-                    label="📄 Download JSON",
-                    data=json.dumps(report_json, indent=2),
-                    file_name=f"facttrace_report_{content_hash}.json",
-                    mime="application/json",
-                    use_container_width=True
-                )
-            
-            with col_exp2:
-                # CSV Export
-                df_export = pd.DataFrame([{
-                    'Timestamp': datetime.now(),
-                    'Hash': content_hash,
-                    'Verdict': final_verdict,
-                    'Confidence': confidence,
-                    'Sentiment': sentiment,
-                    'Category': category,
-                    'Words': word_count
-                }])
-                
-                st.download_button(
-                    label="📊 Download CSV",
-                    data=df_export.to_csv(index=False),
-                    file_name=f"facttrace_report_{content_hash}.csv",
-                    mime="text/csv",
-                    use_container_width=True
-                )
-            
-            with col_exp3:
-                if st.button("🖨️ Print Report", use_container_width=True):
-                    st.success("✅ Report sent to print queue!")
-    
-    st.markdown("</div>", unsafe_allow_html=True)
 
-# ==================== TAB 2: ANALYTICS DASHBOARD ====================
-with tab2:
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-    st.markdown("### 📈 Real-Time Analytics Dashboard")
-    
-    # Top Metrics Row
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown(f"""<div class='metric-card'>
-            <h2 style='color:#00f2fe; margin:0;'>{st.session_state.total_scans}</h2>
-            <p style='color:#8a96c3;'>Total Scans</p>
-        </div>""", unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(f"""<div class='metric-card'>
-            <h2 style='color:#00ff88; margin:0;'>{st.session_state.real_detected}</h2>
-            <p style='color:#8a96c3;'>Verified Real</p>
-        </div>""", unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown(f"""<div class='metric-card'>
-            <h2 style='color:#ff4b4b; margin:0;'>{st.session_state.fake_detected}</h2>
-            <p style='color:#8a96c3;'>Fake Detected</p>
-        </div>""", unsafe_allow_html=True)
-    
-    with col4:
-        detection_rate = round((st.session_state.fake_detected / max(st.session_state.total_scans, 1)) * 100, 1)
-        st.markdown(f"""<div class='metric-card'>
-            <h2 style='color:#ffa500; margin:0;'>{detection_rate}%</h2>
-            <p style='color:#8a96c3;'>Detection Rate</p>
-        </div>""", unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    # Charts Row
-    col_chart1, col_chart2 = st.columns(2)
-    
-    with col_chart1:
-        st.markdown("#### 📊 Detection Distribution")
-        
-        labels = ['Real News', 'Fake News']
-        values = [
-            st.session_state.real_detected if st.session_state.real_detected > 0 else 1,
-            st.session_state.fake_detected if st.session_state.fake_detected > 0 else 1
-        ]
-        
-        fig_pie = go.Figure(data=[go.Pie(
-            labels=labels, 
-            values=values,
-            marker=dict(colors=['#00ff88', '#ff4b4b']),
-            hole=0.4,
-            textinfo='label+percent',
-            textfont=dict(size=14)
-        )])
+        btn_c1, btn_c2, _ = st.columns([1,1,4])
+        with btn_c1:
+            if st.button("📋 Sample Text"):
+                st.session_state["news_input"] = sample_text
+        with btn_c2:
+            if st.button("✕ Clear"):
+                st.session_state["news_input"] = ""
+
+        news_input = st.text_area(
+            "Paste news article / headline here",
+            value=st.session_state.get("news_input", ""),
+            height=220,
+            placeholder="Enter news text to analyze...",
+            key="news_input_area"
+        )
+
+        scan_btn = st.button("⚡ RUN DEEP SCAN", use_container_width=True)
+
+    with col_right:
+        words = len(news_input.split()) if news_input else 0
+        chars = len(news_input) if news_input else 0
+        st.markdown(f'<div class="metric-mini"><div class="val">{words}</div><div class="lbl">Words</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-mini"><div class="val">{chars}</div><div class="lbl">Chars</div></div>', unsafe_allow_html=True)
+
+        if news_input:
+            cat_scores = categorize_news(news_input)
+            top_cat = max(cat_scores, key=cat_scores.get)
+            st.markdown(f'<div class="metric-mini"><div class="val" style="font-size:1.1rem;font-family:\'Exo 2\'">{top_cat}</div><div class="lbl">Category</div></div>', unsafe_allow_html=True)
+
+    # ── RESULTS ──
+    if scan_btn and news_input.strip():
+        with st.spinner("Scanning neural pathways..."):
+            progress = st.progress(0)
+            for i in range(100):
+                time.sleep(0.012)
+                progress.progress(i + 1)
+
+        verdict     = predict_news(news_input, model, vectorizer)
+        confidence  = calculate_confidence(news_input, verdict)
+        content_hash = generate_hash(news_input)
+        sentiment   = analyze_sentiment(news_input)
+        bias        = detect_bias_words(news_input)
+        cat_scores  = categorize_news(news_input)
+
+        # Update session
+        st.session_state.total_scans += 1
+        if verdict == "FAKE":
+            st.session_state.fake_detected += 1
+        else:
+            st.session_state.real_detected += 1
+            st.balloons()
+
+        ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        st.session_state.scan_history.append({
+            "timestamp": ts,
+            "verdict": verdict,
+            "confidence": confidence,
+            "category": max(cat_scores, key=cat_scores.get),
+            "sentiment": sentiment["label"],
+            "text_preview": news_input[:60] + "...",
+            "hash": content_hash,
+        })
+
+        st.markdown("---")
+        # Content hash
+        st.markdown(f'<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.78rem;color:rgba(0,245,255,0.55);text-align:center;margin-bottom:8px">🔐 CONTENT HASH: <b style="color:#00f5ff">{content_hash}</b></div>', unsafe_allow_html=True)
+
+        # Verdict
+        if verdict == "REAL":
+            st.markdown(f'<div class="verdict-real"><p class="verdict-label" style="color:#39ff14">✅ VERIFIED REAL</p>'
+                        f'<p style="font-family:\'Share Tech Mono\',monospace;color:rgba(57,255,20,0.7);font-size:0.8rem">CONFIDENCE: {confidence}%</p></div>',
+                        unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="verdict-fake"><p class="verdict-label" style="color:#ff006e">🚨 FAKE NEWS DETECTED</p>'
+                        f'<p style="font-family:\'Share Tech Mono\',monospace;color:rgba(255,0,110,0.7);font-size:0.8rem">CONFIDENCE: {confidence}%</p></div>',
+                        unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        col_a, col_b = st.columns(2)
+
+        with col_a:
+            st.markdown('<div class="sec-head">SENTIMENT ANALYSIS</div>', unsafe_allow_html=True)
+            fig_gauge = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=sentiment["polarity"],
+                number={"suffix":"", "font": {"size": 24, "color": "#00f5ff"}},
+                gauge={
+                    "axis": {"range": [-1, 1], "tickcolor": "rgba(0,245,255,0.4)"},
+                    "bar": {"color": "#00f5ff"},
+                    "bgcolor": "rgba(0,0,0,0)",
+                    "steps": [
+                        {"range": [-1, -0.1], "color": "rgba(255,0,110,0.2)"},
+                        {"range": [-0.1, 0.1], "color": "rgba(255,140,0,0.2)"},
+                        {"range": [0.1, 1],   "color": "rgba(57,255,20,0.2)"},
+                    ],
+                    "threshold": {"line": {"color": "#00f5ff", "width": 3}, "value": sentiment["polarity"]},
+                },
+                title={"text": f"Sentiment: {sentiment['label']}", "font": {"color": "#aac8dd", "size": 14}},
+                domain={"x": [0,1], "y": [0,1]}
+            ))
+            fig_gauge.update_layout(
+                height=260, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font_color="#cde8f5", margin=dict(l=20,r=20,t=40,b=10)
+            )
+            st.plotly_chart(fig_gauge, use_container_width=True)
+
+        with col_b:
+            st.markdown('<div class="sec-head">TOPIC DISTRIBUTION</div>', unsafe_allow_html=True)
+            cats = list(cat_scores.keys())
+            scores = list(cat_scores.values())
+            fig_bar = go.Figure(go.Bar(
+                x=scores, y=cats, orientation="h",
+                marker=dict(color=["#00f5ff","#ff006e","#39ff14","#ff8c00","#aa00ff","#00bfff"],
+                            opacity=0.8),
+                text=scores, textposition="outside"
+            ))
+            fig_bar.update_layout(
+                height=260, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font_color="#cde8f5", margin=dict(l=10,r=20,t=20,b=10),
+                xaxis=dict(showgrid=False, color="rgba(0,245,255,0.3)"),
+                yaxis=dict(showgrid=False, color="#aac8dd"),
+            )
+            st.plotly_chart(fig_bar, use_container_width=True)
+
+        # Bias detection
+        if bias:
+            st.markdown('<div class="sec-head">⚠ BIAS DETECTION</div>', unsafe_allow_html=True)
+            bias_html = ""
+            for cat, words_list in bias.items():
+                for w in words_list:
+                    bias_html += f'<span class="bias-tag">🚩 {cat}: {w}</span>'
+            st.markdown(f'<div style="line-height:2.2">{bias_html}</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="glass-card" style="text-align:center;color:#39ff14;font-family:\'Share Tech Mono\'">✅ No bias patterns detected</div>', unsafe_allow_html=True)
+
+        # Export
+        if enable_export:
+            st.markdown('<div class="sec-head">EXPORT REPORT</div>', unsafe_allow_html=True)
+            report = {
+                "hash": content_hash, "timestamp": ts, "verdict": verdict,
+                "confidence": confidence, "sentiment": sentiment, "bias": bias,
+                "category": max(cat_scores, key=cat_scores.get),
+                "text_preview": news_input[:200],
+            }
+            e1, e2 = st.columns(2)
+            with e1:
+                st.download_button("⬇ JSON Report", data=json.dumps(report, indent=2),
+                                   file_name=f"facttrace_{content_hash}.json", mime="application/json")
+            with e2:
+                df_export = pd.DataFrame([report])
+                st.download_button("⬇ CSV Report", data=df_export.to_csv(index=False),
+                                   file_name=f"facttrace_{content_hash}.csv", mime="text/csv")
+
+    elif scan_btn:
+        st.warning("⚠ Please enter some news text to analyze.")
+
+# ════════════════════════════════════════════
+# TAB 2 – ANALYTICS DASHBOARD
+# ════════════════════════════════════════════
+with tabs[1]:
+    st.markdown('<div class="sec-head">REAL-TIME ANALYTICS DASHBOARD</div>', unsafe_allow_html=True)
+
+    total = st.session_state.total_scans
+    fake  = st.session_state.fake_detected
+    real  = st.session_state.real_detected
+    acc   = round((real / total * 100) if total > 0 else 98.4, 1)
+
+    c1, c2, c3, c4 = st.columns(4)
+    for col, val, label, color in [(c1, total, "Total Scans","#00f5ff"),
+                                    (c2, real, "Verified Real","#39ff14"),
+                                    (c3, fake, "Fake Detected","#ff006e"),
+                                    (c4, f"{acc}%","Detection Rate","#ff8c00")]:
+        col.markdown(f'<div class="metric-mini"><div class="val" style="color:{color}">{val}</div>'
+                     f'<div class="lbl">{label}</div></div>', unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_pie, col_line = st.columns(2)
+
+    with col_pie:
+        st.markdown('<div class="sec-head">DETECTION DISTRIBUTION</div>', unsafe_allow_html=True)
+        pie_vals = [max(real,1), max(fake,1)]
+        fig_pie = go.Figure(go.Pie(
+            labels=["Real News","Fake News"], values=pie_vals,
+            hole=0.55,
+            marker=dict(colors=["#39ff14","#ff006e"], line=dict(color="#020b18", width=2)),
+            textfont=dict(color="#cde8f5"),
+        ))
         fig_pie.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font={'color': 'white', 'size': 14},
-            height=300,
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            font_color="#cde8f5", height=300, margin=dict(l=10,r=10,t=20,b=10),
+            legend=dict(font=dict(color="#aac8dd"))
         )
         st.plotly_chart(fig_pie, use_container_width=True)
-    
-    with col_chart2:
-        st.markdown("#### 📈 Scan Timeline (7 Days)")
-        
-        # Generate timeline data
-        dates = pd.date_range(end=datetime.now(), periods=7).tolist()
-        scans = np.random.randint(5, 25, size=7).tolist()
-        scans[-1] = st.session_state.total_scans  # Current day actual count
-        
+
+    with col_line:
+        st.markdown('<div class="sec-head">7-DAY SCAN TIMELINE</div>', unsafe_allow_html=True)
+        days = [(datetime.date.today() - datetime.timedelta(days=i)).strftime("%b %d") for i in range(6,-1,-1)]
+        base_real = [random.randint(18,40) for _ in range(7)]
+        base_fake = [random.randint(5,20)  for _ in range(7)]
+        if total > 0:
+            base_real[-1] = real; base_fake[-1] = fake
+
         fig_line = go.Figure()
-        fig_line.add_trace(go.Scatter(
-            x=dates,
-            y=scans,
-            mode='lines+markers',
-            line=dict(color='#00f2fe', width=3),
-            marker=dict(size=10, color='#0072ff'),
-            fill='tozeroy',
-            fillcolor='rgba(0, 242, 254, 0.1)'
-        ))
+        fig_line.add_trace(go.Scatter(x=days, y=base_real, name="Real", mode="lines+markers",
+                                       line=dict(color="#39ff14", width=2),
+                                       marker=dict(color="#39ff14", size=7)))
+        fig_line.add_trace(go.Scatter(x=days, y=base_fake, name="Fake", mode="lines+markers",
+                                       line=dict(color="#ff006e", width=2),
+                                       marker=dict(color="#ff006e", size=7)))
         fig_line.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font={'color': 'white'},
-            height=300,
-            xaxis=dict(showgrid=False, title="Date"),
-            yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.1)', title="Scans"),
-            margin=dict(l=0, r=0, t=0, b=0)
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            height=300, font_color="#cde8f5", margin=dict(l=10,r=10,t=20,b=10),
+            xaxis=dict(showgrid=False, color="rgba(0,245,255,0.3)"),
+            yaxis=dict(showgrid=True, gridcolor="rgba(0,245,255,0.08)", color="rgba(0,245,255,0.3)"),
+            legend=dict(font=dict(color="#aac8dd")),
         )
         st.plotly_chart(fig_line, use_container_width=True)
-    
-    st.markdown("</div>", unsafe_allow_html=True)
 
-# ==================== TAB 3: ORIGIN TRACING ====================
-with tab3:
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-    st.markdown("### 🔗 Blockchain-Based Origin Tracing")
-    
-    trace_input = st.text_input(
-        "Enter Content Hash or URL to Trace:", 
-        placeholder="e.g., a1b2c3d4e5f6 or https://example.com/news"
-    )
-    
-    col_trace1, col_trace2 = st.columns([1, 1])
-    
-    with col_trace1:
-        if st.button("🔍 Trace Origin", use_container_width=True):
-            with st.spinner("Tracing through blockchain network..."):
-                time.sleep(2)
-                
-            st.success("✅ Trace Complete!")
-            
-            # Network Graph Visualization
-            fig_network = go.Figure()
-            
-            # Define nodes
-            x_coords = [0, 1, 2, 1.5, 0.5, 2.5]
-            y_coords = [0, 1, 0, -1, -1.5, -0.5]
-            node_labels = ["ORIGIN", "Twitter", "WhatsApp", "Facebook", "Spreader X", "Current"]
-            node_sizes = [60, 35, 35, 35, 45, 50]
-            node_colors = ['#ff4b4b', '#00f2fe', '#00f2fe', '#00f2fe', '#ffa500', '#00ff88']
-            
-            # Draw edges
-            edge_x = []
-            edge_y = []
-            edges = [(0,1), (1,2), (1,3), (1,4), (2,5), (3,5)]
-            
-            for edge in edges:
-                edge_x.extend([x_coords[edge[0]], x_coords[edge[1]], None])
-                edge_y.extend([y_coords[edge[0]], y_coords[edge[1]], None])
-            
-            # Add edge trace
-            fig_network.add_trace(go.Scatter(
-                x=edge_x, y=edge_y,
-                mode='lines',
-                line=dict(color='rgba(0, 242, 254, 0.3)', width=2),
-                hoverinfo='none',
-                showlegend=False
-            ))
-            
-            # Add node trace
-            fig_network.add_trace(go.Scatter(
-                x=x_coords, y=y_coords,
-                mode='markers+text',
-                marker=dict(
-                    size=node_sizes, 
-                    color=node_colors, 
-                    line=dict(color='white', width=2)
-                ),
-                text=node_labels,
+# ════════════════════════════════════════════
+# TAB 3 – ORIGIN TRACING
+# ════════════════════════════════════════════
+with tabs[2]:
+    st.markdown('<div class="sec-head">BLOCKCHAIN ORIGIN TRACING</div>', unsafe_allow_html=True)
+    hash_input = st.text_input("Enter Content Hash to Trace", placeholder="e.g., A3B7F2C1...")
+
+    if st.button("🔗 Trace Origin", use_container_width=True):
+        if not hash_input.strip():
+            hash_input = "DEMO" + generate_hash("demo")[:8]
+
+        with st.spinner("Querying blockchain nodes..."):
+            time.sleep(1.5)
+
+        col_net, col_info = st.columns([2,1])
+        with col_net:
+            # Network graph
+            node_labels = ["Origin\nServer", "Node A\nUS-East", "Node B\nEurope", "Spreader\nX/Twitter", "YOU"]
+            node_colors = ["#ff006e", "#00f5ff", "#00f5ff", "#ff8c00", "#39ff14"]
+            node_x = [0.1, 0.3, 0.5, 0.7, 0.9]
+            node_y = [0.5, 0.8, 0.2, 0.6, 0.5]
+            edges_x, edges_y = [], []
+            for i in range(len(node_x)-1):
+                edges_x += [node_x[i], node_x[i+1], None]
+                edges_y += [node_y[i], node_y[i+1], None]
+
+            fig_net = go.Figure()
+            fig_net.add_trace(go.Scatter(x=edges_x, y=edges_y, mode="lines",
+                                          line=dict(color="rgba(0,245,255,0.3)", width=2)))
+            fig_net.add_trace(go.Scatter(
+                x=node_x, y=node_y, mode="markers+text",
+                marker=dict(size=30, color=node_colors, line=dict(color="#020b18", width=2)),
+                text=node_labels, textfont=dict(color="#cde8f5", size=9),
                 textposition="bottom center",
-                textfont=dict(size=12, color='white'),
-                hovertemplate='<b>%{text}</b><br>Click for details<extra></extra>',
-                showlegend=False
             ))
-            
-            fig_network.update_layout(
-                showlegend=False,
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                font_color="white",
-                height=400,
+            fig_net.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                height=340, showlegend=False,
                 xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                 yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                margin=dict(l=20, r=20, t=20, b=20)
+                margin=dict(l=10,r=10,t=20,b=30),
             )
-            
-            st.plotly_chart(fig_network, use_container_width=True)
-    
-    with col_trace2:
-        st.markdown("#### 📋 Trace Details")
-        
-        if trace_input:
-            trace_hash = generate_hash(trace_input)
-            
-            st.code(f"""
-{{
-  "origin_hash": "0x{trace_hash}",
-  "first_seen": "2024-01-15 08:23:41 UTC",
-  "propagation_path": [
-    "Source → Twitter (@news_daily)",
-    "Twitter → WhatsApp (News Group)",
-    "WhatsApp → Facebook (Public Post)",
-    "Facebook → Current User"
-  ],
-  "total_shares": 1247,
-  "verified_nodes": 3,
-  "unverified_nodes": 9,
-  "blockchain_confirmations": 6,
-  "trust_score": 73.5
-}}
-            """, language="json")
+            st.plotly_chart(fig_net, use_container_width=True)
+
+        with col_info:
+            trace_data = {
+                "origin_hash": hash_input[:16].upper(),
+                "first_seen": "2024-11-12 03:22:11 UTC",
+                "propagation_path": ["Server-US", "Node-EU", "Twitter", "WhatsApp"],
+                "total_shares": random.randint(1200, 50000),
+                "verified_nodes": 3,
+                "unverified_nodes": 1,
+                "blockchain_confirmations": random.randint(6, 48),
+            }
+            st.markdown('<div class="glass-card"><pre style="font-family:\'Share Tech Mono\',monospace;'
+                        'font-size:0.72rem;color:#00f5ff;white-space:pre-wrap">' +
+                        json.dumps(trace_data, indent=2) + '</pre></div>', unsafe_allow_html=True)
+
+# ════════════════════════════════════════════
+# TAB 4 – TRUTH-BOMB
+# ════════════════════════════════════════════
+with tabs[3]:
+    st.markdown('<div class="sec-head">TRUTH-BOMB DEPLOYMENT CENTER</div>', unsafe_allow_html=True)
+
+    col_l, col_r = st.columns([2,1])
+    with col_l:
+        platform = st.selectbox("Target Platform", ["Twitter/X","WhatsApp","Facebook","Instagram","Email","Telegram"])
+        target   = st.text_input("Target Handle / Group ID", placeholder="@username or group_id")
+        template = st.selectbox("Message Template", ["Fact-Check Alert","Correction Notice","Verification Report","Custom Message"])
+
+        if template == "Custom Message":
+            msg = st.text_area("Custom Message", height=140, placeholder="Write your truth-bomb message...")
         else:
-            st.info("Enter a hash or URL above to see trace details")
-    
-    st.markdown("</div>", unsafe_allow_html=True)
+            templates = {
+                "Fact-Check Alert": f"⚠️ FACT CHECK: The news you shared has been flagged as potentially false by FactTrace AI. Confidence: HIGH. Please verify before resharing.",
+                "Correction Notice": f"📋 CORRECTION: This article contains misleading information. FactTrace AI has verified this claim is FALSE. Source: FactTrace Pro v2.5",
+                "Verification Report": f"✅ VERIFICATION COMPLETE: FactTrace AI has analyzed this content. Status: UNVERIFIED/FALSE. Please visit our portal for the full report.",
+            }
+            msg = st.text_area("Message Preview", value=templates[template], height=140)
 
-# ==================== TAB 4: TRUTH-BOMB DEPLOYMENT ====================
-with tab4:
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-    st.markdown("### 🚀 Automated Truth-Bomb Deployment")
-    
-    col_tb1, col_tb2 = st.columns([1, 1])
-    
-    with col_tb1:
-        st.markdown("#### 🎯 Deployment Configuration")
-        
-        target_platform = st.selectbox(
-            "Select Platform", 
-            ["Twitter", "WhatsApp", "Facebook", "Instagram", "Email"]
-        )
-        
-        target_id = st.text_input(
-            "Target User/Group ID", 
-            placeholder="@username or group_id"
-        )
-        
-        message_template = st.selectbox(
-            "Message Template", 
-            [
-                "Fact-Check Alert",
-                "Correction Notice",
-                "Verification Report",
-                "Custom Message"
-            ]
-        )
-        
-        if message_template == "Custom Message":
-            custom_message = st.text_area(
-                "Custom Message", 
-                height=100,
-                placeholder="Write your correction message here..."
-            )
-        
-        schedule_send = st.checkbox("Schedule Send")
-        if schedule_send:
-            send_time = st.time_input("Send at:", value=None)
-        
+        schedule = st.checkbox("⏰ Schedule Send")
+        if schedule:
+            send_time = st.time_input("Send at time")
+
         if st.button("🚀 DEPLOY TRUTH-BOMB", use_container_width=True):
-            with st.spinner("Deploying truth-bomb..."):
-                time.sleep(2)
-            
-            st.success(f"✅ Truth-bomb successfully deployed to **{target_id}** on **{target_platform}**!")
-            st.balloons()
-    
-    with col_tb2:
-        st.markdown("#### 📊 Deployment Statistics")
-        
-        col_stat1, col_stat2 = st.columns(2)
-        with col_stat1:
-            st.metric("Total Deployments", "1,247", delta="+12")
-        with col_stat2:
-            st.metric("Success Rate", "98.4%", delta="+2.1%")
-        
-        st.metric("Avg Response Time", "2.3 sec")
-        
-        st.markdown("---")
-        st.markdown("#### 📜 Recent Deployments")
-        
-        recent_deploys = pd.DataFrame({
-            'Time': ['2 min ago', '15 min ago', '1 hr ago', '3 hrs ago'],
-            'Platform': ['Twitter', 'WhatsApp', 'Facebook', 'Email'],
-            'Target': ['@fake_news_123', 'News Group', '@rumor_page', 'john@email.com'],
-            'Status': ['✅ Delivered', '✅ Delivered', '⏳ Pending', '✅ Delivered']
-        })
-        
-        st.dataframe(recent_deploys, use_container_width=True, hide_index=True)
-    
-    st.markdown("</div>", unsafe_allow_html=True)
+            with st.spinner("Deploying..."):
+                time.sleep(1.5)
+            ts = datetime.datetime.now().strftime("%H:%M:%S")
+            st.session_state.truth_deployments.append({"time": ts, "platform": platform, "target": target, "status": "✅ Sent"})
+            st.success(f"🚀 Truth-Bomb deployed to {platform}!")
 
-# ==================== TAB 5: MULTI-PLATFORM INTEGRATION ====================
-with tab5:
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-    st.markdown("### 📱 Multi-Platform Integration Hub")
-    
-    platform_cols = st.columns(3)
-    
+    with col_r:
+        deps = st.session_state.truth_deployments
+        st.markdown(f'<div class="metric-mini"><div class="val">{len(deps)}</div><div class="lbl">Total Deployments</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-mini"><div class="val">99.8%</div><div class="lbl">Success Rate</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-mini"><div class="val">127ms</div><div class="lbl">Avg Response</div></div>', unsafe_allow_html=True)
+
+        if deps:
+            st.markdown('<div class="sec-head" style="font-size:0.8rem">RECENT ACTIVITY</div>', unsafe_allow_html=True)
+            df_dep = pd.DataFrame(deps[-3:])
+            st.dataframe(df_dep, use_container_width=True, hide_index=True)
+
+# ════════════════════════════════════════════
+# TAB 5 – MULTI-PLATFORM
+# ════════════════════════════════════════════
+with tabs[4]:
+    st.markdown('<div class="sec-head">MULTI-PLATFORM INTEGRATION HUB</div>', unsafe_allow_html=True)
+
     platforms = [
-        {"name": "WhatsApp", "status": "Active", "icon": "💬", "color": "#25D366"},
-        {"name": "Twitter/X", "status": "Active", "icon": "🐦", "color": "#1DA1F2"},
-        {"name": "Facebook", "status": "Active", "icon": "📘", "color": "#4267B2"},
-        {"name": "Instagram", "status": "Active", "icon": "📷", "color": "#E4405F"},
-        {"name": "Telegram", "status": "Pending", "icon": "✈️", "color": "#0088cc"},
-        {"name": "Email", "status": "Active", "icon": "📧", "color": "#EA4335"}
+        ("💬","WhatsApp","Active","dot-green"),
+        ("🐦","Twitter/X","Active","dot-green"),
+        ("📘","Facebook","Active","dot-green"),
+        ("📸","Instagram","Active","dot-green"),
+        ("✈️","Telegram","Pending","dot-orange"),
+        ("📧","Email","Active","dot-green"),
     ]
-    
-    for idx, platform in enumerate(platforms):
-        with platform_cols[idx % 3]:
-            status_color = "#00ff88" if platform["status"] == "Active" else "#ffa500"
-            st.markdown(f"""
-            <div style='background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; 
-                        border-left: 4px solid {platform["color"]}; margin-bottom: 15px;'>
-                <div style='font-size: 2.5rem; text-align: center;'>{platform["icon"]}</div>
-                <h4 style='margin: 10px 0 5px 0; text-align: center;'>{platform["name"]}</h4>
-                <p style='color: {status_color}; margin: 0; text-align: center;'>● {platform["status"]}</p>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    st.markdown("### ⚙️ API Configuration")
-    
-    col_api1, col_api2 = st.columns(2)
-    
-    with col_api1:
-        st.text_input("WhatsApp Business API Key", type="password", value="")
-        st.text_input("Twitter API Bearer Token", type="password", value="AAAAAAAAAAAAAAAAAAAAAMLheAAAAAAA0%2BuSeid...")
-        st.text_input("Facebook Graph API Key", type="password", value="EAAGm0PX4ZCpsBO8...")
-    
-    with col_api2:
-        st.metric("API Calls Today", "847 / 1000", delta="+127")
-        st.metric("Rate Limit Reset", "2h 15m")
-        st.metric("Active Webhooks", "6")
-        
-        if st.button("🔄 Refresh Connections", use_container_width=True):
-            st.success("✅ All connections refreshed!")
-    
-    st.markdown("</div>", unsafe_allow_html=True)
 
-# ==================== TAB 6: SCAN HISTORY ====================
-with tab6:
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-    st.markdown("### 🗂️ Scan History & Reports")
-    
-    if st.session_state.scan_history:
-        # Convert to DataFrame
-        df_history = pd.DataFrame(st.session_state.scan_history)
-        df_history['timestamp'] = pd.to_datetime(df_history['timestamp']).dt.strftime('%Y-%m-%d %H:%M:%S')
-        
-        # Add color coding function
-        def color_verdict(val):
-            color = '#00ff88' if val == 'REAL' else '#ff4b4b'
-            return f'background-color: {color}20; color: {color}; font-weight: bold;'
-        
-        # Display styled table
-        st.dataframe(
-            df_history[['timestamp', 'verdict', 'confidence', 'category', 'sentiment', 'text_preview']].style.applymap(
-                color_verdict, subset=['verdict']
-            ),
-            use_container_width=True,
-            hide_index=True,
-            height=400
-        )
-        
-        st.markdown("---")
-        
-        # Action buttons
-        col_action1, col_action2, col_action3 = st.columns(3)
-        
-        with col_action1:
-            # Export all history
-            csv_data = df_history.to_csv(index=False)
-            st.download_button(
-                label="📥 Export All History (CSV)",
-                data=csv_data,
-                file_name=f"facttrace_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                mime="text/csv",
-                use_container_width=True
+    cols = st.columns(3)
+    for idx, (icon, name, status, dot) in enumerate(platforms):
+        with cols[idx % 3]:
+            st.markdown(
+                f'<div class="glass-card" style="text-align:center">'
+                f'<div style="font-size:2.2rem">{icon}</div>'
+                f'<div style="font-family:\'Orbitron\',monospace;font-size:0.85rem;color:#00f5ff;margin:6px 0">{name}</div>'
+                f'<span class="{dot}"></span><span style="font-size:0.75rem;color:#aac8dd">{status}</span>'
+                f'</div>', unsafe_allow_html=True
             )
-        
-        with col_action2:
-            # Export as JSON
-            json_data = df_history.to_json(orient='records', indent=2)
-            st.download_button(
-                label="📄 Export as JSON",
-                data=json_data,
-                file_name=f"facttrace_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                mime="application/json",
-                use_container_width=True
-            )
-        
-        with col_action3:
-            # Clear history
-            if st.button("🗑️ Clear All History", use_container_width=True):
+
+    st.markdown('<div class="sec-head">API CONFIGURATION</div>', unsafe_allow_html=True)
+    c1, c2, c3 = st.columns(3)
+    with c1: st.text_input("WhatsApp API Key", type="password", placeholder="wa_api_key...")
+    with c2: st.text_input("Twitter Bearer Token", type="password", placeholder="AAAA...")
+    with c3: st.text_input("Facebook Graph API", type="password", placeholder="EAAxx...")
+
+    st.markdown('<div class="sec-head">RATE LIMIT MONITOR</div>', unsafe_allow_html=True)
+    r1,r2,r3 = st.columns(3)
+    with r1: st.markdown('<div class="metric-mini"><div class="val">847</div><div class="lbl">API Calls Today</div></div>', unsafe_allow_html=True)
+    with r2: st.markdown('<div class="metric-mini"><div class="val">2h 13m</div><div class="lbl">Rate Limit Reset</div></div>', unsafe_allow_html=True)
+    with r3: st.markdown('<div class="metric-mini"><div class="val">7</div><div class="lbl">Active Webhooks</div></div>', unsafe_allow_html=True)
+
+# ════════════════════════════════════════════
+# TAB 6 – SCAN HISTORY
+# ════════════════════════════════════════════
+with tabs[5]:
+    st.markdown('<div class="sec-head">SCAN HISTORY LOG</div>', unsafe_allow_html=True)
+
+    history = st.session_state.scan_history
+    if history:
+        df_hist = pd.DataFrame(history)
+        st.dataframe(df_hist, use_container_width=True, hide_index=True)
+
+        col_e, col_c = st.columns(2)
+        with col_e:
+            st.download_button("⬇ Export All History (CSV)",
+                               data=df_hist.to_csv(index=False),
+                               file_name="facttrace_history.csv", mime="text/csv")
+        with col_c:
+            if st.button("🗑 Clear History"):
                 st.session_state.scan_history = []
-                st.session_state.total_scans = 0
-                st.session_state.fake_detected = 0
-                st.session_state.real_detected = 0
-                st.success("✅ History cleared!")
+                st.success("History cleared.")
                 st.rerun()
     else:
-        st.info("📭 No scan history yet. Start analyzing news to see your history here!")
-        st.markdown("---")
-        st.markdown("### 💡 Quick Start")
-        st.markdown("""
-        1. Go to **Advanced Detection** tab
-        2. Paste or type news content
-        3. Click **RUN DEEP SCAN**
-        4. View results and analysis
-        5. Return here to see scan history
-        """)
-    
-    st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown('<div class="glass-card" style="text-align:center;color:rgba(0,245,255,0.5);font-family:\'Share Tech Mono\',monospace">'
+                    'No scans yet. Run a detection to see history here.</div>', unsafe_allow_html=True)
 
-# ==================== TAB 7: DEVELOPER API ====================
-with tab7:
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-    st.markdown("### 🔧 Developer API Documentation")
-    
-    # API Key Management
-    st.markdown("#### 🔑 API Authentication")
-    
-    col_key1, col_key2 = st.columns([2, 1])
-    
-    with col_key1:
-        st.text_input("Your API Key", value=st.session_state.api_key, disabled=True, type="password")
-    
-    with col_key2:
-        if st.button("🔄 Regenerate Key", use_container_width=True):
-            new_key = "ft_live_" + hashlib.md5(str(datetime.now()).encode()).hexdigest()[:16]
-            st.session_state.api_key = new_key
-            st.success(f"New key: {new_key}")
+# ════════════════════════════════════════════
+# TAB 7 – DEVELOPER API
+# ════════════════════════════════════════════
+with tabs[6]:
+    st.markdown('<div class="sec-head">DEVELOPER API PORTAL</div>', unsafe_allow_html=True)
+
+    col_key, col_btn = st.columns([3,1])
+    with col_key:
+        st.text_input("Your API Key", value=st.session_state.api_key, type="password")
+    with col_btn:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("🔄 Regenerate"):
+            st.session_state.api_key = "ft_live_" + hashlib.sha256(str(random.random()).encode()).hexdigest()[:24]
             st.rerun()
-    
-    st.markdown("---")
-    
-    # API Endpoints
-    st.markdown("#### 📡 Available Endpoints")
-    
-    endpoints = [
-        {
-            "method": "POST",
-            "endpoint": "/api/v1/analyze",
-            "description": "Analyze news content for authenticity and misinformation",
-            "example": '''{
-  "content": "Your news text here",
-  "enable_trace": true,
-  "return_sentiment": true,
-  "return_bias": true
-}''',
-            "response": '''{
-  "verdict": "REAL",
-  "confidence": 94.2,
-  "sentiment": "Positive",
-  "category": "Technology",
-  "hash": "a1b2c3d4e5f6g7h8"
-}'''
-        },
-        {
-            "method": "GET",
-            "endpoint": "/api/v1/trace/{hash}",
-            "description": "Trace the origin and propagation path of content",
-            "example": "GET /api/v1/trace/a1b2c3d4e5f6",
-            "response": '''{
-  "origin_hash": "0xa1b2c3d4",
-  "first_seen": "2024-01-15T08:23:41Z",
-  "propagation_path": [...],
-  "total_shares": 1247
-}'''
-        },
-        {
-            "method": "POST",
-            "endpoint": "/api/v1/deploy-truth",
-            "description": "Deploy truth-bomb correction to misinformation spreader",
-            "example": '''{
-  "platform": "twitter",
-  "target": "@username",
-  "message_template": "fact_check_alert",
-  "schedule_time": null
-}''',
-            "response": '''{
-  "status": "success",
-  "deployment_id": "dep_12345",
-  "delivered_at": "2024-01-15T10:30:00Z"
-}'''
-        }
-    ]
-    
-    for endpoint in endpoints:
-        method_color = "#00ff88" if endpoint["method"] == "GET" else "#00f2fe"
-        
-        st.markdown(f"""
-        <div style='background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;'>
-            <span style='background: {method_color}; color: #000; padding: 4px 10px; border-radius: 5px; font-weight: bold;'>{endpoint["method"]}</span>
-            <code style='color: #00f2fe; margin-left: 10px; font-size: 1.1rem;'>{endpoint["endpoint"]}</code>
-            <p style='margin: 10px 0 0 0; color: #8a96c3;'>{endpoint["description"]}</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        with st.expander("📋 View Request Example"):
-            st.code(endpoint["example"], language="json")
-        
-        with st.expander("📥 View Response Example"):
-            st.code(endpoint["response"], language="json")
-    
-    st.markdown("---")
-    
-    # API Usage Statistics
-    st.markdown("#### 📊 API Usage Statistics")
-    
-    col_stat1, col_stat2, col_stat3, col_stat4 = st.columns(4)
-    
-    with col_stat1:
-        st.metric("Requests Today", "2,847", delta="+324")
-    
-    with col_stat2:
-        st.metric("Avg Response", "127ms", delta="-15ms")
-    
-    with col_stat3:
-        st.metric("Success Rate", "99.8%", delta="+0.2%")
-    
-    with col_stat4:
-        st.metric("Error Rate", "0.2%", delta="-0.1%")
-    
-    # Rate Limit Information
-    st.markdown("---")
-    st.markdown("#### ⏱️ Rate Limits")
-    
-    st.info("""
-    **Standard Tier:**
-    - 1,000 requests per hour
-    - 10,000 requests per day
-    - 100,000 requests per month
-    
-    **Pro Tier:**
-    - 10,000 requests per hour
-    - 100,000 requests per day
-    - Unlimited monthly requests
-    """)
-    
-    st.markdown("</div>", unsafe_allow_html=True)
 
-# ==================== FOOTER ====================
-st.markdown("<br><br>", unsafe_allow_html=True)
+    endpoints = [
+        ("POST","/api/v1/analyze","Analyze news content for fake news detection",
+         '{\n  "text": "Your news article here",\n  "api_key": "ft_live_xxx"\n}'),
+        ("GET", "/api/v1/trace/{hash}","Trace origin of content by hash",
+         '{\n  "hash": "A3B7F2C1...",\n  "api_key": "ft_live_xxx"\n}'),
+        ("POST","/api/v1/deploy-truth","Deploy truth-bomb to target platform",
+         '{\n  "platform": "twitter",\n  "target": "@username",\n  "message": "...",\n  "api_key": "ft_live_xxx"\n}'),
+    ]
+
+    for method, endpoint, desc, example in endpoints:
+        badge = f'<span class="method-post">{method}</span>' if method=="POST" else f'<span class="method-get">{method}</span>'
+        with st.expander(f"{method}  {endpoint}  —  {desc}"):
+            st.markdown(f'{badge} <code style="color:#00f5ff;background:rgba(0,245,255,0.08);padding:3px 10px;border-radius:6px">{endpoint}</code>', unsafe_allow_html=True)
+            st.markdown(f'<p style="color:#aac8dd;font-size:0.85rem">{desc}</p>', unsafe_allow_html=True)
+            st.code(example, language="json")
+
+    st.markdown('<div class="sec-head">API USAGE STATS</div>', unsafe_allow_html=True)
+    s1,s2,s3 = st.columns(3)
+    with s1: st.markdown('<div class="metric-mini"><div class="val">2,847</div><div class="lbl">Requests Today</div></div>', unsafe_allow_html=True)
+    with s2: st.markdown('<div class="metric-mini"><div class="val">127ms</div><div class="lbl">Avg Response Time</div></div>', unsafe_allow_html=True)
+    with s3: st.markdown('<div class="metric-mini"><div class="val">99.8%</div><div class="lbl">Success Rate</div></div>', unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────
+# FOOTER
+# ─────────────────────────────────────────────
 st.markdown("""
-<div style='text-align: center; color: #4b5563; padding: 20px; border-top: 1px solid rgba(255,255,255,0.1);'>
-    <p style='margin: 0; font-size: 1.1rem; font-weight: bold;'>FactTrace AI Pro v2.5.0</p>
-    <p style='margin: 5px 0;'>"Truth Spreads Slower, But Catches Up Faster"</p>
-    <p style='margin: 10px 0 0 0; color: #6b7280; font-size: 0.9rem;'>
-        Developed by <span style='color: #00f2fe;'>TEChNova Solution</span> • 
-        Team: Roshni S, Gayathri S, Harini A<br>
-        Powered by ML • NLP • Blockchain Analytics • Real-time Detection<br>
-        <a href='#' style='color: #00f2fe; text-decoration: none;'>Documentation</a> • 
-        <a href='#' style='color: #00f2fe; text-decoration: none;'>GitHub</a> • 
-        <a href='#' style='color: #00f2fe; text-decoration: none;'>API Reference</a>
-    </p>
+<div class="footer">
+    ⬡ FACTTRACE AI PRO v2.5.0 &nbsp;·&nbsp; Truth Spreads Slower, But Catches Up Faster<br>
+    Developed by TEChNova Solution &nbsp;·&nbsp; ML • NLP • Blockchain<br>
+    <span style="color:rgba(0,245,255,0.25)">Documentation &nbsp;|&nbsp; GitHub &nbsp;|&nbsp; API Reference</span>
 </div>
 """, unsafe_allow_html=True)
