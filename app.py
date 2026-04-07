@@ -316,7 +316,7 @@ with tab1:
                 st.rerun()
         
         with col_btn3:
-            if st.button("🗑️ Clear", use_container_width=True):
+            if st.button("Clear", use_container_width=True):
                 st.session_state.news_input_main = ""
                 st.rerun()
     
