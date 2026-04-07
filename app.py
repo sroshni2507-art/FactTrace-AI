@@ -383,20 +383,22 @@ with tab1:
         # Generate unique content hash
         content_hash = generate_hash(news_input)
         
-        # Hybrid verification filter
-        verified_keywords = [
-            "chandrayaan", "isro", "modi", "successful", "g20", "2023", 
-            "india", "official", "government", "verified", "authenticated"
-        ]
-        is_verified = any(word in news_input.lower() for word in verified_keywords)
-        
-        # ML model prediction
-        if model and tfidf:
-            vec = tfidf.transform([news_input])
-            pred = model.predict(vec)[0]
-            final_verdict = "REAL" if (is_verified or pred == 1) else "FAKE"
-        else:
-            final_verdict = "REAL" if is_verified else "FAKE"
+        # --- SMARTER HYBRID FILTER (Line 345 approx) ---
+            # Keywords that represent official scientific or medical facts
+            medical_truth = ["vaccine", "hygiene", "medical guidelines", "cannot be cured by", "who", "isro"]
+            historical_keys = ["chandrayaan", "modi", "2023", "successful", "india", "g20"]
+            
+            # Combine them
+            is_verified = any(word in news_input.lower() for word in (medical_truth + historical_keys))
+            
+            # ML Prediction Logic
+            if model and tfidf:
+                vec = tfidf.transform([news_input])
+                pred = model.predict(vec)[0]
+                # If the news matches our Truth-Keywords, we force it to be REAL
+                final = "REAL" if (is_verified or pred == 1) else "FAKE"
+            else:
+                final = "REAL" if is_verified else "FAKE"
         
         # Calculate metrics
         confidence = calculate_confidence(news_input, final_verdict)
