@@ -927,16 +927,25 @@ with tab6:
             return f'background-color: {color}20; color: {color}; font-weight: bold;'
         
         # Display styled table
+        # Display styled table
+        # We changed .applymap to .map to fix the AttributeError
         st.dataframe(
-            df_history[['timestamp', 'verdict', 'confidence', 'category', 'sentiment', 'text_preview']].style.applymap(
-                color_verdict, subset=['verdict']
+            df_history[['timestamp', 'verdict', of that line.**
+
+### Use this corrected block for Tab 6:
+
+Replace the code in **Tab 6** 'confidence', 'category', 'sentiment', 'text_preview']].style.map(
+                color_verdict with this simplified version to avoid any styling errors:
+
+```python
+# ==================== TAB 6: SCAN HISTORY =================, subset=['verdict']
             ),
             use_container_width=True,
-            hide_index=True,
+            hide_index===
+with tab6:
+    st.markdown("<div class='glass-card'>", unsafe_allow_=True,
             height=400
         )
-        
-        st.markdown("---")
         
         # Action buttons
         col_action1, col_action2, col_action3 = st.columns(3)
