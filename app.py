@@ -589,7 +589,12 @@ if scan_trigger and news_input:
             with col_exp3:
                 if st.button("🖨️ Print Report", use_container_width=True):
                     st.success("✅ Report sent to print queue!")
-    
+
+# ... end of your detection logic ...
+                else:
+                    st.markdown("<div class='res-fake'><h3>🚨 MISINFORMATION DETECTED</h3></div>", unsafe_allow_html=True)
+        
+    # --- THIS LINE (593) MUST BE INDENTED EXACTLY LIKE THE LINE ABOVE IT ---
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ==================== TAB 2: ANALYTICS DASHBOARD ====================
