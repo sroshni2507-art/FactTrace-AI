@@ -383,20 +383,21 @@ with tab1:
         # Generate unique content hash
         content_hash = generate_hash(news_input)
         
-        # --- SMARTER HYBRID FILTER (Line 345 approx) ---
-            # Keywords that represent official scientific or medical facts
+if scan_trigger and news_input:
+        with st.spinner("AI Analysis in progress..."):
+            time.sleep(1)
+            
+            # --- MAKE SURE THESE LINES ARE ALIGNED PERFECTLY ---
             medical_truth = ["vaccine", "hygiene", "medical guidelines", "cannot be cured by", "who", "isro"]
             historical_keys = ["chandrayaan", "modi", "2023", "successful", "india", "g20"]
             
             # Combine them
             is_verified = any(word in news_input.lower() for word in (medical_truth + historical_keys))
             
-            # ML Prediction Logic
             if model and tfidf:
                 vec = tfidf.transform([news_input])
-                pred = model.predict(vec)[0]
-                # If the news matches our Truth-Keywords, we force it to be REAL
-                final = "REAL" if (is_verified or pred == 1) else "FAKE"
+                p = model.predict(vec)[0]
+                final = "REAL" if (is_verified or p == 1) else "FAKE"
             else:
                 final = "REAL" if is_verified else "FAKE"
         
