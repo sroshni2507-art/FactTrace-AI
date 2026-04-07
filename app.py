@@ -917,82 +917,23 @@ with tab6:
     st.markdown("### 🗂️ Scan History & Reports")
     
     if st.session_state.scan_history:
-        # Convert to DataFrame
         df_history = pd.DataFrame(st.session_state.scan_history)
-        df_history['timestamp'] = pd.to_datetime(df_history['timestamp']).dt.strftime('%Y-%m-%d %H:%M:%S')
         
-        # Add color coding function
         def color_verdict(val):
             color = '#00ff88' if val == 'REAL' else '#ff4b4b'
             return f'background-color: {color}20; color: {color}; font-weight: bold;'
         
-        # Display styled table
-
-        # Display styled table
-        # We changed .applymap to .map to fix the AttributeError
+        # FIXED: Brackets are closed correctly here
         st.dataframe(
-            df_history[['timestamp', 'verdict', of that line.**
-
-### Use this corrected block for Tab 6:
-
-Replace the code in **Tab 6** 'confidence', 'category', 'sentiment', 'text_preview']].style.map(
-                color_verdict with this simplified version to avoid any styling errors:
-
-```python
-# ==================== TAB 6: SCAN HISTORY =================, subset=['verdict']
-            ),
-            use_container_width=True,
-            hide_index===
-with tab6:
-    st.markdown("<div class='glass-card'>", unsafe_allow_=True,
-            height=400
+            df_history.style.map(color_verdict, subset=['verdict']),
+            use_container_width=True
         )
-        # Action buttons
-        col_action1, col_action2, col_action3 = st.columns(3)
         
-        with col_action1:
-            # Export all history
-            csv_data = df_history.to_csv(index=False)
-            st.download_button(
-                label="📥 Export All History (CSV)",
-                data=csv_data,
-                file_name=f"facttrace_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                mime="text/csv",
-                use_container_width=True
-            )
-        
-        with col_action2:
-            # Export as JSON
-            json_data = df_history.to_json(orient='records', indent=2)
-            st.download_button(
-                label="📄 Export as JSON",
-                data=json_data,
-                file_name=f"facttrace_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                mime="application/json",
-                use_container_width=True
-            )
-        
-        with col_action3:
-            # Clear history
-            if st.button("🗑️ Clear All History", use_container_width=True):
-                st.session_state.scan_history = []
-                st.session_state.total_scans = 0
-                st.session_state.fake_detected = 0
-                st.session_state.real_detected = 0
-                st.success("✅ History cleared!")
-                st.rerun()
+        if st.button("🗑️ Clear History", use_container_width=True):
+            st.session_state.scan_history = []
+            st.rerun()
     else:
-        st.info("📭 No scan history yet. Start analyzing news to see your history here!")
-        st.markdown("---")
-        st.markdown("### 💡 Quick Start")
-        st.markdown("""
-        1. Go to **Advanced Detection** tab
-        2. Paste or type news content
-        3. Click **RUN DEEP SCAN**
-        4. View results and analysis
-        5. Return here to see scan history
-        """)
-    
+        st.info("📭 No scan history yet.")
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ==================== TAB 7: DEVELOPER API ====================
